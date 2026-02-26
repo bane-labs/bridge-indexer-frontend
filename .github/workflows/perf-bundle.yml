@@ -1,0 +1,168 @@
+name: Performance - Bundle Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "apps/web/**"
+      - "packages/ui/**"
+      - "pnpm-lock.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/**"
+      - "packages/ui/**"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Bundle size budgets (in bytes)
+  # Adjust these based on your performance requirements
+  BUDGET_FIRST_LOAD_KB: 150
+  BUDGET_TOTAL_KB: 500
+
+jobs:
+  analyze:
+    name: Bundle Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle analysis
+        run: pnpm --filter @atlas/web build
+        env:
+          ANALYZE: true
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
+      - name: Extract bundle stats
+        id: stats
+        run: |
+          # Extract bundle sizes from Next.js build output
+          # Look for the .next/build-manifest.json and calculate sizes
+          BUILD_DIR="apps/web/.next"
+
+          if [ -d "$BUILD_DIR" ]; then
+            # Calculate total JS size for static chunks
+            STATIC_SIZE=$(find "$BUILD_DIR/static" -name "*.js" -type f 2>/dev/null | xargs wc -c 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
+            STATIC_SIZE_KB=$((STATIC_SIZE / 1024))
+            
+            echo "static_size_kb=$STATIC_SIZE_KB" >> $GITHUB_OUTPUT
+            echo "Static bundle size: ${STATIC_SIZE_KB}KB"
+          else
+            echo "static_size_kb=0" >> $GITHUB_OUTPUT
+            echo "⚠️ Build directory not found"
+          fi
+
+      - name: Check bundle budgets
+        id: budget-check
+        run: |
+          STATIC_SIZE=${{ steps.stats.outputs.static_size_kb }}
+          BUDGET=${{ env.BUDGET_TOTAL_KB }}
+
+          echo "## 📦 Bundle Size Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Size | Budget | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$STATIC_SIZE" -gt "$BUDGET" ]; then
+            echo "| Static Bundle | ${STATIC_SIZE}KB | ${BUDGET}KB | ❌ Over budget |" >> $GITHUB_STEP_SUMMARY
+            echo "budget_exceeded=true" >> $GITHUB_OUTPUT
+          else
+            echo "| Static Bundle | ${STATIC_SIZE}KB | ${BUDGET}KB | ✅ Within budget |" >> $GITHUB_STEP_SUMMARY
+            echo "budget_exceeded=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analysis
+          path: |
+            apps/web/.next/analyze
+          retention-days: 30
+
+      - name: Store baseline on main
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: apps/web/.next/analyze
+          key: bundle-baseline-${{ github.sha }}
+
+      - name: Fail if budget exceeded
+        if: steps.budget-check.outputs.budget_exceeded == 'true'
+        run: |
+          echo "❌ Bundle size exceeds budget!"
+          echo "Please optimize your bundle or increase the budget if justified."
+          exit 1
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const staticSize = '${{ steps.stats.outputs.static_size_kb }}';
+            const budget = '${{ env.BUDGET_TOTAL_KB }}';
+            const exceeded = '${{ steps.budget-check.outputs.budget_exceeded }}' === 'true';
+
+            let body = '## 📦 Bundle Analysis\n\n';
+            body += '| Metric | Size | Budget | Status |\n';
+            body += '|--------|------|--------|--------|\n';
+            body += `| Static Bundle | ${staticSize}KB | ${budget}KB | ${exceeded ? '❌ Over' : '✅ OK'} |\n\n`;
+
+            if (exceeded) {
+              body += '⚠️ **Bundle size exceeds budget.** Please optimize or justify the increase.\n\n';
+            }
+
+            body += '_Download the `bundle-analysis` artifact for detailed treemap visualization._\n';
+
+            // Find and update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c => 
+              c.user.type === 'Bot' && c.body.includes('## Bundle Analysis')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }

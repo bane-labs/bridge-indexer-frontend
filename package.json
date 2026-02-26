@@ -1,0 +1,60 @@
+{
+  "name": "@atlas/monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise frontend platform monorepo",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "preinstall": "node scripts/ensure-pnpm.js",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "turbo run format:check",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:e2e": "turbo run test:e2e",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky",
+    "api:gen": "pnpm --filter @atlas/web api:gen",
+    "perf:lhci": "pnpm --filter @atlas/web perf:lhci",
+    "perf:analyze": "pnpm --filter @atlas/web perf:analyze",
+    "perf:enable": "node tools/perf/enable.js",
+    "perf:disable": "node tools/perf/disable.js",
+    "compose:check": "docker compose config --quiet && echo '✓ Compose configuration is valid'",
+    "compose:sanity": "docker compose --profile sanity up -d && docker compose --profile sanity logs sanity && docker compose --profile sanity down",
+    "infra:help": "echo 'Atlas is a pure frontend platform—no infrastructure required.\\n\\nFor consumer apps needing DB/cache:\\n  1. See: examples/compose/infra.yml\\n  2. Docs: docs/how-we-build/local-dev-composition.md\\n  3. Run:  docker compose -f docker-compose.yml -f examples/compose/infra.yml --profile infra up -d'",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:status": "changeset status"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@eslint/js": "^9.39.2",
+    "@turbo/gen": "2.3.3",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unused-imports": "^4.3.0",
+    "globals": "^16.5.0",
+    "husky": "9.1.7",
+    "lint-staged": "15.2.10",
+    "prettier": "3.4.2",
+    "prettier-plugin-tailwindcss": "0.6.10",
+    "turbo": "2.3.3",
+    "typescript-eslint": "^8.50.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.0.0",
+      "react-dom": "19.0.0"
+    }
+  }
+}

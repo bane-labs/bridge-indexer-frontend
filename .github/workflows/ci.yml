@@ -1,0 +1,315 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repo-policies:
+    name: Repository Policies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for forbidden lockfiles
+        run: |
+          FORBIDDEN_LOCKFILES=""
+
+          if [ -f "package-lock.json" ]; then
+            FORBIDDEN_LOCKFILES="$FORBIDDEN_LOCKFILES package-lock.json"
+          fi
+
+          if [ -f "yarn.lock" ]; then
+            FORBIDDEN_LOCKFILES="$FORBIDDEN_LOCKFILES yarn.lock"
+          fi
+
+          if [ -f "bun.lockb" ]; then
+            FORBIDDEN_LOCKFILES="$FORBIDDEN_LOCKFILES bun.lockb"
+          fi
+
+          if [ -n "$FORBIDDEN_LOCKFILES" ]; then
+            echo "❌ Error: Forbidden lockfiles detected:$FORBIDDEN_LOCKFILES"
+            echo ""
+            echo "Atlas enforces pnpm as the only package manager."
+            echo "Please remove these files and use 'pnpm install' instead."
+            echo ""
+            echo "Only pnpm-lock.yaml is allowed in this repository."
+            exit 1
+          fi
+
+          echo "✅ No forbidden lockfiles found"
+
+      - name: Check lockfile exists
+        run: |
+          if [ ! -f "pnpm-lock.yaml" ]; then
+            echo "❌ Error: pnpm-lock.yaml is required but not found"
+            exit 1
+          fi
+          echo "✅ Lockfile exists"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify lockfile is up-to-date
+        run: |
+          # Check if lockfile has changed after install
+          if ! git diff --exit-code pnpm-lock.yaml; then
+            echo "❌ Error: pnpm-lock.yaml is out of date"
+            echo "Please run 'pnpm install' and commit the updated lockfile"
+            exit 1
+          fi
+          echo "✅ Lockfile is up-to-date"
+
+      - name: Check for package.json changes without lockfile update
+        if: github.event_name == 'pull_request'
+        run: |
+          # Get list of changed files
+          git fetch origin ${{ github.base_ref }}
+
+          # Check if any package.json changed
+          PACKAGE_JSON_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E 'package\.json$' || true)
+
+          # Check if lockfile changed
+          LOCKFILE_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep 'pnpm-lock.yaml' || true)
+
+          if [ -n "$PACKAGE_JSON_CHANGED" ] && [ -z "$LOCKFILE_CHANGED" ]; then
+            echo "❌ Error: package.json was modified but pnpm-lock.yaml was not updated"
+            echo "Changed package.json files:"
+            echo "$PACKAGE_JSON_CHANGED"
+            echo ""
+            echo "Please run 'pnpm install' and commit the updated lockfile"
+            exit 1
+          fi
+
+          if [ -n "$PACKAGE_JSON_CHANGED" ]; then
+            echo "✅ Both package.json and lockfile were updated"
+          else
+            echo "✅ No package.json changes detected"
+          fi
+
+  validate-env:
+    name: Validate Environment Variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate environment variables
+        run: pnpm --filter @atlas/web validate:env
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://user:password@localhost:5432/atlas_ci
+          NEXT_PUBLIC_API_URL: https://api.example.com
+
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prettier check
+        run: pnpm format
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Verify no console usage (grep guard)
+        run: |
+          echo "🔍 Checking for banned console usage..."
+
+          # Search for console usage in source files
+          CONSOLE_MATCHES=$(grep -rIn \
+            --include="*.ts" \
+            --include="*.tsx" \
+            --include="*.js" \
+            --include="*.jsx" \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            --exclude-dir=dist \
+            --exclude-dir=build \
+            --exclude-dir=coverage \
+            --exclude-dir=.turbo \
+            --exclude-dir=storybook-static \
+            --exclude="*.stories.tsx" \
+            --exclude="*.stories.ts" \
+            --exclude="*.stories.jsx" \
+            --exclude="*.stories.js" \
+            -E 'console\.(log|debug|info|warn|error|trace|table|dir|time|timeEnd|count|assert|clear|group|groupEnd)\(' \
+            src/ app/ packages/ 2>/dev/null || true)
+
+          if [ -n "$CONSOLE_MATCHES" ]; then
+            echo "❌ Error: Banned console usage detected!"
+            echo ""
+            echo "$CONSOLE_MATCHES"
+            echo ""
+            echo "Please use structured logging instead:"
+            echo "  import { log } from '@/lib/logging/logger.server';"
+            echo "  log.info({ event: 'your_event' }, 'Your message');"
+            echo ""
+            exit 1
+          fi
+
+          echo "✅ No console usage found"
+
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript check
+        run: pnpm typecheck
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm test -- --coverage
+        env:
+          CI: true
+
+      - name: Check coverage thresholds
+        run: pnpm --filter @atlas/ui test:coverage
+        env:
+          CI: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./packages/ui/coverage/coverage-final.json
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          CI: true
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @atlas/web exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm --filter @atlas/web test:e2e
+        env:
+          CI: true
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+          SKIP_ENV_VALIDATION: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30

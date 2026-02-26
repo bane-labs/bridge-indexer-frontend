@@ -1,0 +1,54 @@
+# CODEOWNERS
+# This file defines code ownership for automatic PR review requests.
+# Order matters - the last matching pattern takes precedence.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @thedanielmark
+
+# Infrastructure and DevOps
+/docker-compose*.yml @thedanielmark
+/Dockerfile* @thedanielmark
+/bin/ @thedanielmark
+/.github/ @thedanielmark
+
+# Root configuration files
+/turbo.json @thedanielmark
+/pnpm-workspace.yaml @thedanielmark
+/package.json @thedanielmark
+
+# Documentation
+/docs/ @thedanielmark
+/README.md @thedanielmark
+/packages/*/README.md @thedanielmark
+
+# Web Application
+/apps/web/ @thedanielmark
+
+# Web App - Core Routes
+/apps/web/src/app/ @thedanielmark
+
+# Web App - Environment Configuration (requires extra review)
+/apps/web/src/env/ @thedanielmark
+/apps/web/src/schemas/env/ @thedanielmark
+/apps/web/scripts/validate-env.ts @thedanielmark
+/docs/ENVIRONMENT_VARIABLES.md @thedanielmark
+
+# Web App - Tests
+/apps/web/e2e/ @thedanielmark
+/apps/web/playwright.config.ts @thedanielmark
+
+# Shared Packages
+/packages/ @thedanielmark
+
+# UI Component Library
+/packages/ui/ @thedanielmark
+/packages/ui/src/components/ @thedanielmark
+
+# Config Package (affects all apps)
+/packages/config/ @thedanielmark
+/packages/config/tsconfig*.json @thedanielmark
+/packages/config/eslint.config.mjs @thedanielmark
+
+# CI/CD and GitHub Actions (add when created)
+/.github/workflows/ @thedanielmark

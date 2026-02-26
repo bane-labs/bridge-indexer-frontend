@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1
+
+FROM node:24.0.1-alpine
+
+LABEL maintainer="developers@thedanielmark.com"
+LABEL org.opencontainers.image.source="https://github.com/thedanielmark/atlas"
+
+# Install dependencies
+RUN apk add --no-cache bash curl git openssh \
+    && npm install -g pnpm@10.15.1
+
+# Create app directory
+WORKDIR /app
+
+# Copy in only package manager files (will be overridden by volume mount)
+COPY package.json pnpm-workspace.yaml ./
+
+# Install dependencies
+RUN pnpm install
+
+# Create pnpm directory and set permissions
+RUN mkdir -p /pnpm && chmod 777 /pnpm
+
+# Ensure permissions are correct for devcontainer user
+RUN addgroup -S dev && adduser -S dev -G dev && chown -R dev:dev /app
+
+USER dev
+
+CMD ["pnpm", "dev"]

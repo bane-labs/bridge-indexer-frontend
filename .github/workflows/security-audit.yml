@@ -1,0 +1,38 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level moderate --json || true | jq .
+
+      - name: Check for known vulnerabilities
+        run: |
+          # Show summary of audit results
+          echo "Security audit completed"
+          pnpm audit --audit-level moderate --json || true | jq '.metadata.vulnerabilities // empty'

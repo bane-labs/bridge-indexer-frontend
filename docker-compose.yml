@@ -1,0 +1,72 @@
+# ==============================================================================
+# Atlas Docker Compose - Local Development Scaffold
+# ==============================================================================
+#
+# IMPORTANT: Atlas is a PURE FRONT-END platform template.
+#
+# This file does NOT include infrastructure services (Postgres, Redis, etc.)
+# by default because:
+#
+#   1. Atlas requires no database or cache to run locally
+#   2. Running `pnpm dev` starts the app immediately
+#   3. Infrastructure adds unnecessary complexity for frontend work
+#
+# WHY THIS FILE EXISTS:
+#
+#   - Provides a consistent scaffold for consumer apps that extend Atlas
+#   - Demonstrates Docker Compose profile patterns for opt-in services
+#   - Validates compose configuration in CI without starting services
+#
+# FOR CONSUMER APPS THAT NEED INFRASTRUCTURE:
+#
+#   See: docs/how-we-build/local-dev-composition.md
+#   Example: examples/compose/infra.yml
+#
+#   Consumer apps can copy the infra example and merge it here, or use
+#   `docker compose -f docker-compose.yml -f docker-compose.infra.yml` to
+#   layer infrastructure on top of this base.
+#
+# PROFILES:
+#
+#   docker compose --profile sanity up -d    # Validate compose works
+#   docker compose config                    # Validate YAML syntax
+#
+# ==============================================================================
+
+# Compose specification (modern format, no version field needed)
+# https://docs.docker.com/compose/compose-file/
+
+services:
+  # ---------------------------------------------------------------------------
+  # Sanity Check Service
+  # ---------------------------------------------------------------------------
+  # A minimal, zero-config service to validate Docker Compose works.
+  # Only runs when explicitly enabled with --profile sanity.
+  #
+  # Usage:
+  #   docker compose --profile sanity up -d
+  #   docker compose --profile sanity logs sanity
+  #   docker compose --profile sanity down
+  # ---------------------------------------------------------------------------
+  sanity:
+    image: alpine:3.19
+    container_name: atlas-sanity
+    profiles:
+      - sanity
+    command: ["sh", "-c", "echo 'Atlas compose is working!' && sleep 10"]
+    restart: "no"
+    # No ports, volumes, or privileges required
+# ==============================================================================
+# EXTENDING THIS FILE
+# ==============================================================================
+#
+# To add infrastructure services (for consumer apps or full-stack extensions):
+#
+# Option A: Copy examples/compose/infra.yml services into this file
+# Option B: Use compose file layering:
+#
+#   docker compose -f docker-compose.yml -f examples/compose/infra.yml \
+#     --profile infra up -d
+#
+# See docs/how-we-build/local-dev-composition.md for full guidance.
+# ==============================================================================

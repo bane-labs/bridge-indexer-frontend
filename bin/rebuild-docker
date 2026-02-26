@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+
+echo "Rebuilding Docker containers..."
+docker compose -f docker-compose.dev.yml down -v
+
+# Build and start containers
+echo "Building and starting containers..."
+docker compose -f docker-compose.dev.yml up --build -d
+
+echo "\nInstalling node_modules on host for VS Code..."
+pnpm install
+
+echo "\nRebuild complete! Starting containers in foreground..."
+docker compose -f docker-compose.dev.yml up

@@ -1,0 +1,132 @@
+# ==============================================================================
+# Infrastructure Example - Postgres + Redis for Consumer Apps
+# ==============================================================================
+#
+# ⚠️  DO NOT USE THIS FOR ATLAS ITSELF ⚠️
+#
+# Atlas is a pure front-end platform template. It does not require database
+# or caching infrastructure to run. This file is provided as a scaffold for:
+#
+#   - Consumer apps that extend Atlas with backend functionality
+#   - Teams evaluating what infrastructure they might need
+#   - Full-stack prototypes built on Atlas
+#
+# HOW TO USE:
+#
+#   1. Copy this file to your consumer app repository
+#   2. Merge with or layer on top of docker-compose.yml
+#   3. Create .env.local with required credentials (see below)
+#   4. Run: docker compose --profile infra up -d
+#
+# LAYERING (without copying):
+#
+#   docker compose -f docker-compose.yml -f examples/compose/infra.yml \
+#     --profile infra up -d
+#
+# ==============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  # Production-grade relational database for consumer app data.
+  #
+  # Connection string for .env.local:
+  #   DATABASE_URL=postgresql://atlas:atlas_dev_password@localhost:5432/atlas_dev
+  #
+  # Access via psql:
+  #   docker compose --profile infra exec postgres psql -U atlas -d atlas_dev
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: atlas-postgres-dev
+    profiles:
+      - infra
+    restart: unless-stopped
+    environment:
+      # ⚠️  DEV-ONLY CREDENTIALS - Never use in production!
+      POSTGRES_DB: atlas_dev
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache
+  # ---------------------------------------------------------------------------
+  # In-memory data store for caching, sessions, rate limiting, etc.
+  #
+  # Connection for .env.local:
+  #   REDIS_URL=redis://:redis_dev_password@localhost:6379
+  #
+  # Access via redis-cli:
+  #   docker compose --profile infra exec redis redis-cli -a redis_dev_password
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: atlas-redis-dev
+    profiles:
+      - infra
+    restart: unless-stopped
+    command: redis-server --requirepass redis_dev_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_dev_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+# Named volumes persist data across container restarts.
+# To reset: docker compose --profile infra down -v
+# ==============================================================================
+volumes:
+  postgres_data:
+    name: atlas_postgres_data
+  redis_data:
+    name: atlas_redis_data
+# ==============================================================================
+# ENVIRONMENT VARIABLES
+# ==============================================================================
+#
+# Add these to your .env.local for the services above:
+#
+# # Database
+# DATABASE_URL=postgresql://atlas:atlas_dev_password@localhost:5432/atlas_dev
+#
+# # Redis (if your app uses it)
+# REDIS_URL=redis://:redis_dev_password@localhost:6379
+#
+# ==============================================================================
+#
+# EXTENDING WITH MORE SERVICES
+# ==============================================================================
+#
+# Common additions for consumer apps:
+#
+# - mailhog:     Local email testing (ports: 1025, 8025)
+# - minio:       S3-compatible object storage (port: 9000)
+# - localstack:  AWS services locally (port: 4566)
+# - temporal:    Workflow orchestration (port: 7233)
+#
+# Remember to:
+# 1. Add services behind the 'infra' profile
+# 2. Include healthchecks
+# 3. Use named volumes for persistence
+# 4. Document connection strings
+#
+# ==============================================================================

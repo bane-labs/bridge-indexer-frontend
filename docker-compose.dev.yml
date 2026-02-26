@@ -1,0 +1,23 @@
+services:
+  nextjs-dev:
+    container_name: atlas-app
+    build:
+      context: .
+      dockerfile: Dockerfile.devcontainer
+    working_dir: /app
+    command: pnpm dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app:cached
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - COREPACK_ENABLE_STRICT=0
+      - PNPM_HOME=/app/.pnpm
+    tty: true
+    stdin_open: true
+
+volumes:
+  node_modules:

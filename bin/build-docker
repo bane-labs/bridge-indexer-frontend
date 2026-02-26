@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Build and push Docker image for production
+# Usage: ./bin/build-docker [environment] [tag]
+
+set -e
+
+ENVIRONMENT=${1:-production}
+TAG=${2:-latest}
+REGISTRY="ghcr.io/thedanielmark"
+IMAGE_NAME="atlas"
+
+echo "🐳 Building Docker image for ${ENVIRONMENT}..."
+
+case $ENVIRONMENT in
+  staging)
+    docker compose -f docker-compose.staging.yml build
+    docker tag atlas:staging ${REGISTRY}/${IMAGE_NAME}:staging-${TAG}
+    echo "✅ Built staging image: ${REGISTRY}/${IMAGE_NAME}:staging-${TAG}"
+    echo ""
+    echo "To push to registry:"
+    echo "  docker push ${REGISTRY}/${IMAGE_NAME}:staging-${TAG}"
+    ;;
+    
+  production)
+    docker build -t ${REGISTRY}/${IMAGE_NAME}:${TAG} -f Dockerfile .
+    docker tag ${REGISTRY}/${IMAGE_NAME}:${TAG} ${REGISTRY}/${IMAGE_NAME}:production
+    echo "✅ Built production image: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    echo ""
+    echo "To push to registry:"
+    echo "  docker push ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    echo "  docker push ${REGISTRY}/${IMAGE_NAME}:production"
+    ;;
+    
+  *)
+    echo "❌ Invalid environment. Use 'staging' or 'production'"
+    exit 1
+    ;;
+esac
+
+echo ""
+echo "To run locally:"
+case $ENVIRONMENT in
+  staging)
+    echo "  docker compose -f docker-compose.staging.yml up"
+    ;;
+  production)
+    echo "  docker run -p 3000:3000 ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    ;;
+esac

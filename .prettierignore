@@ -1,0 +1,35 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+
+# Build outputs
+.next
+out
+dist
+build
+.turbo
+
+# Generated files
+coverage
+storybook-static
+playwright-report
+test-results
+.contentlayer
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+
+# Lock files and auto-generated
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Other
+*.min.js
+*.min.css

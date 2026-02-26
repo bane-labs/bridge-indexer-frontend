@@ -1,0 +1,148 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":pinDigestsDisabled",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Asia/Kolkata",
+  "schedule": ["after 10pm every weekday", "before 5am every weekday", "every weekend"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "semanticCommits": "enabled",
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "🤖 Dependency Updates Dashboard",
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security", "dependencies"],
+    "schedule": []
+  },
+  "packageRules": [
+    {
+      "description": "Group Next.js ecosystem updates",
+      "groupName": "Next.js ecosystem",
+      "matchPackageNames": ["next", "react", "react-dom"],
+      "matchPackagePatterns": ["^@next/", "^eslint-config-next"]
+    },
+    {
+      "description": "Group TypeScript and type definitions",
+      "groupName": "TypeScript and types",
+      "matchPackageNames": ["typescript", "ts-node", "ts-jest", "tsx"],
+      "matchPackagePatterns": ["^@types/"]
+    },
+    {
+      "description": "Group linting and formatting tools",
+      "groupName": "Linting and formatting",
+      "matchPackagePatterns": ["^eslint", "^@eslint/", "^typescript-eslint", "^prettier"],
+      "matchPackageNames": ["lint-staged", "husky"]
+    },
+    {
+      "description": "Group testing tools and libraries",
+      "groupName": "Testing",
+      "matchPackagePatterns": ["^jest", "^@jest/", "^@testing-library/", "^vitest"],
+      "matchPackageNames": ["@playwright/test", "identity-obj-proxy"]
+    },
+    {
+      "description": "Group Radix UI components",
+      "groupName": "Radix UI components",
+      "matchPackagePatterns": ["^@radix-ui/"]
+    },
+    {
+      "description": "Group Tailwind CSS ecosystem",
+      "groupName": "Tailwind CSS",
+      "matchPackageNames": [
+        "tailwindcss",
+        "tailwind-merge",
+        "tailwindcss-animate",
+        "prettier-plugin-tailwindcss",
+        "class-variance-authority"
+      ],
+      "matchPackagePatterns": ["^@tailwindcss/"]
+    },
+    {
+      "description": "Group tooling and build tools",
+      "groupName": "Tooling and build",
+      "matchPackageNames": ["turbo", "postcss", "autoprefixer"],
+      "matchPackagePatterns": ["^@turbo/"]
+    },
+    {
+      "description": "Group React Query ecosystem",
+      "groupName": "TanStack Query",
+      "matchPackagePatterns": ["^@tanstack/react-query"]
+    },
+    {
+      "description": "Group minor and patch updates for workspace packages",
+      "groupName": "Workspace package minor/patch updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackagePatterns": ["^@atlas/"]
+    },
+    {
+      "description": "Separate major updates with extra review context",
+      "matchUpdateTypes": ["major"],
+      "labels": ["deps:major", "dependencies"],
+      "addLabels": ["needs-review"],
+      "prBodyNotes": [
+        "⚠️ **MAJOR VERSION UPDATE** ⚠️",
+        "",
+        "This PR contains a major version update that may include breaking changes.",
+        "Please carefully review:",
+        "- Release notes and changelog",
+        "- Migration guides",
+        "- Breaking changes documentation",
+        "- Test coverage for affected areas",
+        "",
+        "Consider testing thoroughly before merging."
+      ]
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Separate major GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["github-actions", "deps:major", "dependencies"]
+    },
+    {
+      "description": "Group Docker base image minor updates",
+      "groupName": "Docker base images",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Separate Docker major updates",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["docker", "deps:major", "dependencies"]
+    },
+    {
+      "description": "Auto-merge patch updates for low-risk dependencies",
+      "matchUpdateTypes": ["patch"],
+      "matchPackagePatterns": ["^@types/"],
+      "automerge": false,
+      "labels": ["dependencies", "automerge-candidate"]
+    },
+    {
+      "description": "Fast-track security updates (ignore schedule)",
+      "matchDatasources": ["npm"],
+      "vulnerabilityAlerts": {
+        "enabled": true
+      },
+      "schedule": [],
+      "labels": ["security", "dependencies", "priority"]
+    }
+  ],
+  "postUpdateOptions": ["pnpmDedupe"],
+  "ignoreDeps": []
+}

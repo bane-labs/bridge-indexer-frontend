@@ -1,0 +1,23 @@
+name: Gitleaks Secrets Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  gitleaks:
+    name: Detect Secrets with Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔒 Run Gitleaks in Docker (fail on secrets)
+        run: |
+          docker run --rm --network=none \
+            -v "$PWD:/repo:ro" -w /repo \
+            ghcr.io/gitleaks/gitleaks:latest \
+            detect --no-git --source=/repo \
+            --redact --verbose --exit-code 1
