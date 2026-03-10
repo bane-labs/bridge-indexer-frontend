@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Button, ThemeToggle } from "@atlas/ui";
 
 import { RuntimeConfigDebug } from "@/components/RuntimeConfigDebug";
@@ -18,9 +16,6 @@ export default function HomePage() {
           Enterprise-grade monorepo with Next.js, TypeScript, and Tailwind CSS
         </p>
         <div className="flex gap-4">
-          <Link href="/demo">
-            <Button size="lg">View Demo</Button>
-          </Link>
           <a
             href="https://github.com/thedanielmark/atlas"
             target="_blank"

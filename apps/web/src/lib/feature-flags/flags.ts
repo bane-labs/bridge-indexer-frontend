@@ -69,24 +69,6 @@ export const FeatureFlags = {
    * When enabled, sends additional analytics events.
    */
   ENHANCED_ANALYTICS: "enhanced_analytics",
-
-  /**
-   * Demo: New table UI.
-   * When enabled, shows the new table design in demos.
-   */
-  DEMO_NEW_TABLE: "demo_new_table",
-
-  /**
-   * Demo: Dangerous action feature.
-   * This is a demo feature to show kill switch patterns.
-   */
-  DEMO_DANGEROUS_ACTION: "demo_dangerous_action",
-
-  /**
-   * Kill switch for demo dangerous action.
-   * When true, the dangerous action is forcibly DISABLED.
-   */
-  KILL_DEMO_DANGEROUS_ACTION: "kill_demo_dangerous_action",
 } as const;
 
 /**
