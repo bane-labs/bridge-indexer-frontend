@@ -20,7 +20,6 @@ COPY turbo.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/
-COPY scripts/ ./scripts/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
