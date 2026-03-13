@@ -56,4 +56,6 @@ export interface BridgeDashboardSummary {
 export interface BridgeDashboardData {
   summary: BridgeDashboardSummary;
   groups: BridgeGroup[];
+  /** Flat list of all directional statuses for table-based views. */
+  statuses: DirectionalBridgeStatus[];
 }

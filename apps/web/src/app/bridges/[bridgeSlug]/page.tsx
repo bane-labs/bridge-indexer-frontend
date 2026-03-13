@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { BridgeDetailView } from "@/features/bridges/components/bridge-detail-view";
 import { BridgeHistoryError } from "@/features/bridges/components/bridge-history-error";
-import { BridgeHistoryHeader } from "@/features/bridges/components/bridge-history-header";
-import { BridgeHistorySection } from "@/features/bridges/components/bridge-history-section";
 import { BridgeHistorySkeleton } from "@/features/bridges/components/bridge-history-skeleton";
+import { getBridgeDashboard } from "@/features/bridges/lib/get-bridge-dashboard";
 import { getBridgeHistory } from "@/features/bridges/lib/get-bridge-history";
 
 import type { Metadata } from "next";
@@ -16,54 +16,43 @@ interface BridgeHistoryPageProps {
 export async function generateMetadata({ params }: BridgeHistoryPageProps): Promise<Metadata> {
   const { bridgeSlug } = await params;
   return {
-    title: `Bridge History — ${bridgeSlug}`,
-    description: `Operation history for the ${bridgeSlug} bridge.`,
+    title: `Bridge Detail — ${bridgeSlug}`,
+    description: `Sync state and operation history for the ${bridgeSlug} bridge.`,
   };
 }
 
-async function BridgeHistoryContent({ slug }: { slug: string }) {
-  let data;
+async function BridgeDetailContent({ slug }: { slug: string }) {
+  let historyData;
+  let dashboardData;
   try {
-    data = await getBridgeHistory(slug);
+    [historyData, dashboardData] = await Promise.all([
+      getBridgeHistory(slug),
+      getBridgeDashboard(),
+    ]);
   } catch {
     return <BridgeHistoryError />;
   }
 
-  if (!data) {
+  if (!historyData) {
     notFound();
   }
 
-  const [first] = data.directions;
+  // Find matching directional statuses for this bridge slug
+  const matchingStatuses = dashboardData.statuses.filter((s) => {
+    const statusSlug = s.tokenSymbol ? `token-${s.tokenSymbol.toLowerCase()}` : s.bridgeFamily;
+    return statusSlug === slug;
+  });
 
-  return (
-    <>
-      <BridgeHistoryHeader
-        label={data.label}
-        bridgeFamily={data.bridgeFamily}
-        tokenSymbol={data.tokenSymbol}
-        primarySourceChain={first.sourceChain}
-        primaryDestChain={first.destinationChain}
-      />
-
-      <div className="space-y-10">
-        {data.directions.map((direction) => (
-          <BridgeHistorySection
-            key={`${direction.sourceChain}-${direction.destinationChain}`}
-            direction={direction}
-          />
-        ))}
-      </div>
-    </>
-  );
+  return <BridgeDetailView history={historyData} statuses={matchingStatuses} />;
 }
 
 export default async function BridgeHistoryPage({ params }: BridgeHistoryPageProps) {
   const { bridgeSlug } = await params;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <Suspense fallback={<BridgeHistorySkeleton />}>
-        <BridgeHistoryContent slug={bridgeSlug} />
+        <BridgeDetailContent slug={bridgeSlug} />
       </Suspense>
     </main>
   );

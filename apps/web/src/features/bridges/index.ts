@@ -1,7 +1,7 @@
 /**
  * Bridge Explorer Feature
  *
- * Dashboard for monitoring the health and sync status of all
+ * Operator dashboard for monitoring the health and sync status of all
  * directional bridge instances (Neo N3 ↔ Neo X).
  */
 
@@ -76,7 +76,18 @@ export {
   getComparisonLabel,
 } from "./lib/bridge-comparison";
 
-// Components — dashboard
+// Lib — bridge instance (flat rows for the operator dashboard)
+export type { BridgeInstanceRow } from "./lib/bridge-instance";
+export { getProblematicRows, sortBySeverity, toBridgeInstanceRows } from "./lib/bridge-instance";
+
+// Components — operator dashboard (primary view)
+export { OperatorDashboard } from "./components/operator-dashboard";
+export { OperatorDashboardSkeleton } from "./components/operator-dashboard-skeleton";
+
+// Components — detail view
+export { BridgeDetailView } from "./components/bridge-detail-view";
+
+// Components — dashboard (legacy, still used internally)
 export { BridgeDashboardEmpty } from "./components/bridge-dashboard-empty";
 export { BridgeDashboardError } from "./components/bridge-dashboard-error";
 export { BridgeDashboardSkeleton } from "./components/bridge-dashboard-skeleton";
@@ -86,7 +97,7 @@ export { ChainStateRow } from "./components/chain-state-row";
 export { DirectionalBridgeCard } from "./components/directional-bridge-card";
 export { SyncStatusBadge } from "./components/sync-status-badge";
 
-// Components — bridge state
+// Components — bridge state (preserved for potential advanced diagnostics)
 export { BridgeSideStatePanel } from "./components/bridge-side-state-panel";
 export { BridgeStateEmpty } from "./components/bridge-state-empty";
 export { BridgeStateError } from "./components/bridge-state-error";

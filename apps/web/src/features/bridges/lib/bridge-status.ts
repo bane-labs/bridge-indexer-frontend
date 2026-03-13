@@ -138,5 +138,5 @@ export function buildDashboardData(directions: DirectionalBridgeStatus[]): Bridg
     return a.label.localeCompare(b.label);
   });
 
-  return { summary, groups };
+  return { summary, groups, statuses: directions };
 }
