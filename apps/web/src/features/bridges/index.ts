@@ -28,11 +28,45 @@ export type {
   DirectionalBridgeSyncState,
 } from "./types/bridge-state";
 
+// Types — bridge history
+export type {
+  BridgeDirectionHistory,
+  BridgeHistoryPageData,
+  BridgeOperationHistoryRow,
+} from "./types/bridge-history";
+
 // Service — dashboard
 export { getBridgeDashboard } from "./lib/get-bridge-dashboard";
 
 // Service — bridge state
 export { getBridgeState } from "./lib/get-bridge-state";
+
+// Service — bridge history
+export { getBridgeHistory } from "./lib/get-bridge-history";
+
+// Lib — slugs
+export {
+  buildBridgeContext,
+  buildBridgeLabel,
+  getBridgeSlug as buildBridgeSlug,
+  KNOWN_BRIDGE_SLUGS,
+  parseBridgeSlug,
+} from "./lib/bridge-slugs";
+
+// Lib — explorer links
+export {
+  getChainBadgeLabel,
+  getExplorerLabel,
+  getExplorerTxUrl,
+} from "./lib/bridge-explorer-links";
+
+// Lib — history formatters
+export {
+  formatSettledTime,
+  formatSettledTooltip,
+  shortenRoot,
+  shortenTxHash,
+} from "./lib/bridge-history-formatters";
 
 // Lib — comparison
 export {
@@ -64,3 +98,14 @@ export { BridgeSyncSection } from "./components/bridge-sync-section";
 export { ComparisonSummaryBadge } from "./components/comparison-summary";
 export { DirectionalBridgeSyncCard } from "./components/directional-bridge-sync-card";
 export { StaleIndicator } from "./components/stale-indicator";
+
+// Components — bridge history
+export { BridgeHistoryEmptyState } from "./components/bridge-history-empty-state";
+export { BridgeHistoryError } from "./components/bridge-history-error";
+export { BridgeHistoryHeader } from "./components/bridge-history-header";
+export { BridgeHistorySection } from "./components/bridge-history-section";
+export { BridgeHistorySkeleton } from "./components/bridge-history-skeleton";
+export { BridgeHistoryTable } from "./components/bridge-history-table";
+export { CopyButton } from "./components/copy-button";
+export { HashCell } from "./components/hash-cell";
+export { TxLinkCell } from "./components/tx-link-cell";
