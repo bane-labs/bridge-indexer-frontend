@@ -28,21 +28,11 @@ export type {
   DirectionalBridgeSyncState,
 } from "./types/bridge-state";
 
-// Types — bridge history
-export type {
-  BridgeHistoryData,
-  BridgeOperation,
-  DirectionalBridgeHistory,
-} from "./types/bridge-history";
-
 // Service — dashboard
 export { getBridgeDashboard } from "./lib/get-bridge-dashboard";
 
 // Service — bridge state
 export { getBridgeState } from "./lib/get-bridge-state";
-
-// Service — bridge history
-export { getBridgeHistory } from "./lib/get-bridge-history";
 
 // Lib — comparison
 export {
@@ -74,11 +64,3 @@ export { BridgeSyncSection } from "./components/bridge-sync-section";
 export { ComparisonSummaryBadge } from "./components/comparison-summary";
 export { DirectionalBridgeSyncCard } from "./components/directional-bridge-sync-card";
 export { StaleIndicator } from "./components/stale-indicator";
-
-// Components — bridge history
-export { BridgeHistoryDirection } from "./components/bridge-history-direction";
-export { BridgeHistoryError } from "./components/bridge-history-error";
-export { BridgeHistoryNotFound } from "./components/bridge-history-not-found";
-export { BridgeHistorySkeleton } from "./components/bridge-history-skeleton";
-export { BridgeHistoryTable } from "./components/bridge-history-table";
-export { CopyableHash } from "./components/copyable-hash";

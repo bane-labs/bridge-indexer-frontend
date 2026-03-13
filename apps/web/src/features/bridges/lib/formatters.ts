@@ -104,14 +104,3 @@ export function formatBlockNumber(blockNumber: number | undefined): string {
 export function getSideLabel(side: "source" | "destination", state: BridgeSideState): string {
   return side === "source" ? `Source (nonce ${state.nonce})` : `Destination (nonce ${state.nonce})`;
 }
-
-/** Block explorer base URLs for each chain. */
-const EXPLORER_URLS: Record<ChainId, string> = {
-  neo_n3: "https://dora.coz.io/transaction/neo3/mainnet",
-  neo_x: "https://xexplorer.neo.org/tx",
-};
-
-/** Build a block explorer link for a transaction hash on a given chain. */
-export function getExplorerTxUrl(chainId: ChainId, txHash: string): string {
-  return `${EXPLORER_URLS[chainId]}/${txHash}`;
-}
