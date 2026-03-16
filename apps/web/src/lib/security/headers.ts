@@ -59,7 +59,6 @@ export function getSecurityHeaders(config: SecurityHeadersConfig): Record<string
     ].join(", "),
 
     // Prevent page from being embedded in iframes
-    // NOTE: CSP frame-ancestors is preferred, but X-Frame-Options provides defense in depth
     "X-Frame-Options": "DENY",
 
     // Cross-Origin-Opener-Policy: Isolate browsing context

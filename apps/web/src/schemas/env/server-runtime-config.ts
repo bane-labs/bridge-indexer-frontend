@@ -108,15 +108,6 @@ export const ServerEnvSchema = {
   SENTRY_ENABLE_IN_DEV: z.string().optional(),
 
   /**
-   * Content Security Policy mode.
-   * Controls CSP enforcement level across environments.
-   *
-   * @default 'report-only' (non-production), 'enforce' (production)
-   * @example 'off' | 'report-only' | 'enforce'
-   */
-  CSP_MODE: z.enum(["off", "report-only", "enforce"]).optional(),
-
-  /**
    * Enable Strict-Transport-Security (HSTS) header.
    * Only enable in production when HTTPS is guaranteed.
    *
@@ -128,71 +119,6 @@ export const ServerEnvSchema = {
     .string()
     .transform((val) => val === "true")
     .optional(),
-
-  /**
-   * CSP report endpoint for violation reporting.
-   * Optional - where CSP violations should be sent.
-   *
-   * @example '/api/csp-report' | 'https://reporting.example.com/csp'
-   */
-  CSP_REPORT_URI: z.string().optional(),
-
-  /**
-   * Additional allowed script sources for CSP.
-   * Comma-separated list of domains allowed to serve scripts.
-   *
-   * @example 'https://www.googletagmanager.com,https://cdn.example.com'
-   */
-  CSP_SCRIPT_SRC: z.string().optional(),
-
-  /**
-   * Additional allowed connect sources for CSP.
-   * Comma-separated list of domains allowed for fetch/XHR/WebSocket.
-   *
-   * @example 'https://api.example.com,https://analytics.example.com'
-   */
-  CSP_CONNECT_SRC: z.string().optional(),
-
-  /**
-   * Additional allowed image sources for CSP.
-   * Comma-separated list of domains allowed to serve images.
-   *
-   * @example 'https://cdn.example.com,https://images.example.com'
-   */
-  CSP_IMG_SRC: z.string().optional(),
-
-  /**
-   * Additional allowed font sources for CSP.
-   * Comma-separated list of domains allowed to serve fonts.
-   *
-   * @example 'https://fonts.googleapis.com,https://fonts.gstatic.com'
-   */
-  CSP_FONT_SRC: z.string().optional(),
-
-  /**
-   * Additional allowed style sources for CSP.
-   * Comma-separated list of domains allowed to serve stylesheets.
-   *
-   * @example 'https://fonts.googleapis.com'
-   */
-  CSP_STYLE_SRC: z.string().optional(),
-
-  /**
-   * Allowed frame sources for CSP.
-   * Comma-separated list of domains allowed in iframes.
-   *
-   * @example 'https://www.youtube.com,https://player.vimeo.com'
-   */
-  CSP_FRAME_SRC: z.string().optional(),
-
-  /**
-   * Allowed frame ancestors for CSP.
-   * Comma-separated list of domains allowed to embed this app.
-   *
-   * @default 'none' (no embedding allowed)
-   * @example 'https://trusted-parent.com'
-   */
-  CSP_FRAME_ANCESTORS: z.string().optional(),
 
   // ============================================================================
   // Feature Flags

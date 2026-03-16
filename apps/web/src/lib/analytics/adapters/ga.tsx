@@ -266,8 +266,6 @@ interface GAScriptProps {
   measurementId: string;
   /** Enable debug mode */
   debug?: boolean;
-  /** CSP nonce for inline scripts */
-  nonce?: string;
 }
 
 /**
@@ -279,14 +277,12 @@ interface GAScriptProps {
  * @example
  * ```tsx
  * import { GAScript } from "@/lib/analytics/adapters/ga";
- * import { getNonce } from "@/lib/security/nonce";
  *
- * export default async function Layout({ children }) {
- *   const nonce = await getNonce();
+ * export default function Layout({ children }) {
  *   return (
  *     <html>
  *       <body>
- *         <GAScript measurementId="G-XXXXXXXXXX" nonce={nonce} />
+ *         <GAScript measurementId="G-XXXXXXXXXX" />
  *         {children}
  *       </body>
  *     </html>
@@ -294,13 +290,12 @@ interface GAScriptProps {
  * }
  * ```
  */
-export function GAScript({ measurementId, debug, nonce }: GAScriptProps) {
+export function GAScript({ measurementId, debug }: GAScriptProps) {
   return (
     <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
         strategy="afterInteractive"
-        nonce={nonce}
         onLoad={() => {
           if (debug) {
             // eslint-disable-next-line no-console
@@ -311,7 +306,6 @@ export function GAScript({ measurementId, debug, nonce }: GAScriptProps) {
       <Script
         id="ga-init"
         strategy="afterInteractive"
-        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];

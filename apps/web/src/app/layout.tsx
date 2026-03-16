@@ -5,7 +5,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@atlas/ui";
 
 import { GlobalErrorHandler } from "@/components/SentryErrorBoundary";
-import { getNonce } from "@/lib/security/nonce";
 import { MainProvider } from "@/providers";
 
 import type { Metadata } from "next";
@@ -34,13 +33,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = await getNonce();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script
-          nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
@@ -69,7 +65,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <MainProvider nonce={nonce}>
+        <MainProvider>
           <GlobalErrorHandler />
           {children}
           <Toaster />

@@ -12,16 +12,15 @@ import type React from "react";
 
 interface MainProviderProps {
   children: React.ReactNode;
-  nonce?: string;
 }
 
-export function MainProvider({ children, nonce }: MainProviderProps) {
+export function MainProvider({ children }: MainProviderProps) {
   return (
     <FeatureFlagsProvider>
       <ThemeProvider>
         <ReactQueryProvider>
           <ToasterProvider>
-            <AnalyticsProvider nonce={nonce}>
+            <AnalyticsProvider>
               <WebVitalsReporter />
               {children}
             </AnalyticsProvider>
