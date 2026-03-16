@@ -53,8 +53,8 @@ export async function serverApiRequest<T>(
 ): Promise<T> {
   const { body, ...fetchOptions } = options;
 
-  const baseUrl = getApiBaseUrl();
-  const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
+  const baseUrl = await getApiBaseUrl();
+  const url = endpoint.startsWith("http") ? endpoint : new URL(endpoint, baseUrl).toString();
 
   // Build headers
   const headers = new Headers(fetchOptions.headers);

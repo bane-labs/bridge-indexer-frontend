@@ -1,4 +1,4 @@
-import { MOCK_BRIDGE_STATE_STATUSES } from "../data/mock-bridge-state";
+import { getBridgeDashboard } from "./get-bridge-dashboard";
 
 import { deriveComparisonSummary, deriveStaleReason } from "./bridge-comparison";
 
@@ -139,14 +139,11 @@ function computeSummary(sections: BridgeSyncSection[]): BridgeStateSummary {
 }
 
 /**
- * Fetch bridge state data. Currently uses mocked data.
- * Replace the data source with an API call for production.
+ * Fetch bridge state data from the dashboard's real backend-backed statuses.
  */
 export async function getBridgeState(): Promise<BridgeStatePageData> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  const sections = buildSections(MOCK_BRIDGE_STATE_STATUSES);
+  const dashboard = await getBridgeDashboard();
+  const sections = buildSections(dashboard.statuses);
   const summary = computeSummary(sections);
 
   return { sections, summary };
