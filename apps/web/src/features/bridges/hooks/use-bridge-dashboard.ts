@@ -2,8 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { useApiClient } from "@/lib/api/hooks";
-
 import { resolveTokenSymbol } from "../lib/bridge-operation-utils";
 import { buildDashboardData, deriveSyncStatus, isDataStale } from "../lib/bridge-status";
 
@@ -148,8 +146,6 @@ function mapGroupToStatus(group: OperationGroup): DirectionalBridgeStatus | null
 }
 
 export function useBridgeDashboard() {
-  const api = useApiClient();
-
   return useQuery<BridgeDashboardData>({
     queryKey: ["bridge-dashboard"],
     queryFn: async () => {
@@ -159,18 +155,27 @@ export function useBridgeDashboard() {
       const all: BackendBridgeOperation[] = [];
 
       while (offset < total) {
-        const response = await api.get<OperationsResponse>(
-          `/operations?limit=${pageSize}&offset=${offset}`,
-          { skipAuth: true }
-        );
+        const response = await fetch(`/api/backend/operations?limit=${pageSize}&offset=${offset}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "omit",
+        });
 
-        if (!response.operations.length) {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch operations: HTTP ${response.status}`);
+        }
+
+        const payload = (await response.json()) as OperationsResponse;
+
+        if (!payload.operations.length) {
           break;
         }
 
-        all.push(...response.operations);
-        total = response.total;
-        offset += response.operations.length;
+        all.push(...payload.operations);
+        total = payload.total;
+        offset += payload.operations.length;
 
         if (offset > 20000) {
           break;
