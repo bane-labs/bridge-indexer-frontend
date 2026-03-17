@@ -1,5 +1,6 @@
 import { parseBridgeSlug } from "./bridge-slugs";
-import { fetchAllBridgeOperations, resolveTokenSymbol } from "./bridge-operations-api";
+import { fetchAllBridgeOperations } from "./bridge-operations-api";
+import { resolveTokenSymbol } from "./bridge-operation-utils";
 
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 import type { ChainId } from "../types/bridge";

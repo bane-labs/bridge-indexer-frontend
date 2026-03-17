@@ -1,10 +1,39 @@
-import { fetchAllBridgeOperations } from "./bridge-operations-api";
-import { resolveTokenSymbol } from "./bridge-operation-utils";
+"use client";
 
-import { buildDashboardData, deriveSyncStatus, isDataStale } from "./bridge-status";
+import { useQuery } from "@tanstack/react-query";
 
-import type { BridgeDashboardData } from "../types/bridge";
-import type { DirectionalBridgeStatus } from "../types/bridge";
+import { useApiClient } from "@/lib/api/hooks";
+
+import { resolveTokenSymbol } from "../lib/bridge-operation-utils";
+import { buildDashboardData, deriveSyncStatus, isDataStale } from "../lib/bridge-status";
+
+import type { BridgeDashboardData, DirectionalBridgeStatus } from "../types/bridge";
+
+type BackendBridgeType = "native" | "token" | "message";
+type BackendDirection = "deposit" | "withdrawal";
+type BackendOperationStatus = "pending" | "completed" | "stuck";
+
+interface BackendBridgeOperation {
+  bridge_type: BackendBridgeType;
+  direction: BackendDirection;
+  nonce: number;
+  source_chain: DirectionalBridgeStatus["sourceChain"];
+  destination_chain: DirectionalBridgeStatus["destinationChain"];
+  source_block_height: number;
+  dest_block_height?: number;
+  source_tx_hash: string;
+  dest_tx_hash?: string;
+  token_contract?: string;
+  root?: string;
+  timestamp: string;
+  completion_timestamp?: string;
+  status: BackendOperationStatus;
+}
+
+interface OperationsResponse {
+  operations: BackendBridgeOperation[];
+  total: number;
+}
 
 interface OperationGroup {
   bridgeFamily: DirectionalBridgeStatus["bridgeFamily"];
@@ -18,15 +47,13 @@ interface OperationGroup {
     destBlockHeight?: number;
     timestamp: string;
     completionTimestamp?: string;
-    status: "pending" | "completed" | "stuck";
+    status: BackendOperationStatus;
   }>;
 }
 
 const EMPTY_ROOT = "0x0";
 
-function groupOperationsByDirection(
-  operations: Awaited<ReturnType<typeof fetchAllBridgeOperations>>
-): OperationGroup[] {
+function groupOperationsByDirection(operations: BackendBridgeOperation[]): OperationGroup[] {
   const groups = new Map<string, OperationGroup>();
 
   for (const op of operations) {
@@ -120,15 +147,44 @@ function mapGroupToStatus(group: OperationGroup): DirectionalBridgeStatus | null
   };
 }
 
-/**
- * Fetch bridge dashboard data from backend operations.
- */
-export async function getBridgeDashboard(): Promise<BridgeDashboardData> {
-  const operations = await fetchAllBridgeOperations();
-  const groups = groupOperationsByDirection(operations);
-  const statuses = groups
-    .map(mapGroupToStatus)
-    .filter((status): status is DirectionalBridgeStatus => Boolean(status));
+export function useBridgeDashboard() {
+  const api = useApiClient();
 
-  return buildDashboardData(statuses);
+  return useQuery<BridgeDashboardData>({
+    queryKey: ["bridge-dashboard"],
+    queryFn: async () => {
+      const pageSize = 500;
+      let offset = 0;
+      let total = Number.POSITIVE_INFINITY;
+      const all: BackendBridgeOperation[] = [];
+
+      while (offset < total) {
+        const response = await api.get<OperationsResponse>(
+          `/operations?limit=${pageSize}&offset=${offset}`,
+          { skipAuth: true }
+        );
+
+        if (!response.operations.length) {
+          break;
+        }
+
+        all.push(...response.operations);
+        total = response.total;
+        offset += response.operations.length;
+
+        if (offset > 20000) {
+          break;
+        }
+      }
+
+      const groups = groupOperationsByDirection(all);
+      const statuses = groups
+        .map(mapGroupToStatus)
+        .filter((status): status is DirectionalBridgeStatus => Boolean(status));
+
+      return buildDashboardData(statuses);
+    },
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
 }

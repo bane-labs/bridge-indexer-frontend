@@ -1,12 +1,6 @@
-import { Suspense } from "react";
-
 import { ThemeToggle } from "@atlas/ui";
 
-import { BridgeDashboardEmpty } from "@/features/bridges/components/bridge-dashboard-empty";
-import { BridgeDashboardError } from "@/features/bridges/components/bridge-dashboard-error";
-import { OperatorDashboard } from "@/features/bridges/components/operator-dashboard";
-import { OperatorDashboardSkeleton } from "@/features/bridges/components/operator-dashboard-skeleton";
-import { getBridgeDashboard } from "@/features/bridges/lib/get-bridge-dashboard";
+import { BridgeDashboardClient } from "@/features/bridges/components/bridge-dashboard-client";
 
 import type { Metadata } from "next";
 
@@ -14,21 +8,6 @@ export const metadata: Metadata = {
   title: "Bridge Operator Dashboard",
   description: "Monitor the health and sync status of all Neo bridge instances.",
 };
-
-async function DashboardContent() {
-  let data;
-  try {
-    data = await getBridgeDashboard();
-  } catch {
-    return <BridgeDashboardError />;
-  }
-
-  if (data.statuses.length === 0) {
-    return <BridgeDashboardEmpty />;
-  }
-
-  return <OperatorDashboard statuses={data.statuses} summary={data.summary} />;
-}
 
 export default function HomePage() {
   return (
@@ -45,9 +24,7 @@ export default function HomePage() {
         <ThemeToggle />
       </header>
 
-      <Suspense fallback={<OperatorDashboardSkeleton />}>
-        <DashboardContent />
-      </Suspense>
+      <BridgeDashboardClient />
     </main>
   );
 }
