@@ -10,6 +10,8 @@
 
 import "server-only";
 
+import { headers } from "next/headers";
+
 import { fetchWithContext } from "../http/fetch-with-context.server";
 
 import { getApiBaseUrl } from "./config";
@@ -25,6 +27,34 @@ export interface ServerApiRequestOptions extends Omit<RequestInit, "body"> {
    * Request body. Will be JSON-stringified automatically.
    */
   body?: unknown;
+}
+
+async function buildServerApiUrl(endpoint: string, baseUrl: string): Promise<string> {
+  if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+    return endpoint;
+  }
+
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
+    return `${baseUrl.replace(/\/$/, "")}${normalizedEndpoint}`;
+  }
+
+  if (baseUrl.startsWith("/")) {
+    const requestHeaders = await headers();
+    const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+    const forwardedProto = requestHeaders.get("x-forwarded-proto");
+
+    if (!host) {
+      throw new Error("Unable to resolve request host for relative API base URL");
+    }
+
+    const proto = forwardedProto ?? (host.includes("localhost") ? "http" : "https");
+    const normalizedBase = baseUrl.replace(/\/$/, "");
+    return `${proto}://${host}${normalizedBase}${normalizedEndpoint}`;
+  }
+
+  throw new Error(`Invalid API base URL: ${baseUrl}`);
 }
 
 /**
@@ -54,7 +84,7 @@ export async function serverApiRequest<T>(
   const { body, ...fetchOptions } = options;
 
   const baseUrl = await getApiBaseUrl();
-  const url = endpoint.startsWith("http") ? endpoint : new URL(endpoint, baseUrl).toString();
+  const url = await buildServerApiUrl(endpoint, baseUrl);
 
   // Build headers
   const headers = new Headers(fetchOptions.headers);
