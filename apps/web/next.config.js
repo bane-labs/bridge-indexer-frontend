@@ -71,21 +71,6 @@ const nextConfig = {
       },
     ];
   },
-  // Same-origin proxy for backend API calls from the browser.
-  // This avoids CORS by letting Next.js forward requests server-side.
-  async rewrites() {
-    const backendOrigin = (
-      process.env.BRIDGE_BACKEND_ORIGIN ||
-      "https://banelabs-bridge-indexer-backend.app.mf.axlabs.net"
-    ).replace(/\/$/, "");
-
-    return [
-      {
-        source: "/api/backend/:path*",
-        destination: `${backendOrigin}/:path*`,
-      },
-    ];
-  },
 };
 
 // Apply bundle analyzer first
