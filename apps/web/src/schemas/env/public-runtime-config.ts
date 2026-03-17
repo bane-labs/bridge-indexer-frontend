@@ -20,10 +20,7 @@ export const ClientEnvSchema = {
    *
    * @example 'https://api.example.com', '/api'
    */
-  NEXT_PUBLIC_API_URL: z
-    .string()
-    .min(1)
-    .default("https://banelabs-bridge-indexer-backend.app.mf.axlabs.net/"),
+  NEXT_PUBLIC_API_URL: z.string().min(1).default("/api"),
 
   /**
    * Application URL (where the frontend is hosted).
