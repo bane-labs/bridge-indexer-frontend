@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
-import { BridgeDetailView } from "@/features/bridges/components/bridge-detail-view";
-import { BridgeHistoryError } from "@/features/bridges/components/bridge-history-error";
-import { BridgeHistorySkeleton } from "@/features/bridges/components/bridge-history-skeleton";
-import { getBridgeDashboard } from "@/features/bridges/lib/get-bridge-dashboard";
-import { getBridgeHistory } from "@/features/bridges/lib/get-bridge-history";
+import { BridgeHistoryClient } from "@/features/bridges/components/bridge-history-client";
+import { parseBridgeSlug } from "@/features/bridges/lib/bridge-slugs";
 
 import type { Metadata } from "next";
 
@@ -21,39 +17,17 @@ export async function generateMetadata({ params }: BridgeHistoryPageProps): Prom
   };
 }
 
-async function BridgeDetailContent({ slug }: { slug: string }) {
-  let historyData;
-  let dashboardData;
-  try {
-    [historyData, dashboardData] = await Promise.all([
-      getBridgeHistory(slug),
-      getBridgeDashboard(),
-    ]);
-  } catch {
-    return <BridgeHistoryError />;
-  }
-
-  if (!historyData) {
-    notFound();
-  }
-
-  // Find matching directional statuses for this bridge slug
-  const matchingStatuses = dashboardData.statuses.filter((s) => {
-    const statusSlug = s.tokenSymbol ? `token-${s.tokenSymbol.toLowerCase()}` : s.bridgeFamily;
-    return statusSlug === slug;
-  });
-
-  return <BridgeDetailView history={historyData} statuses={matchingStatuses} />;
-}
-
 export default async function BridgeHistoryPage({ params }: BridgeHistoryPageProps) {
   const { bridgeSlug } = await params;
 
+  // Keep route-level validation on the server; data fetching happens on the client.
+  if (!parseBridgeSlug(bridgeSlug)) {
+    notFound();
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Suspense fallback={<BridgeHistorySkeleton />}>
-        <BridgeDetailContent slug={bridgeSlug} />
-      </Suspense>
+      <BridgeHistoryClient slug={bridgeSlug} />
     </main>
   );
 }
