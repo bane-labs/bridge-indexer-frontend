@@ -40,6 +40,8 @@ export function deriveStaleReason(
   thresholdMs: number,
   now = new Date()
 ): string | undefined {
+  if (!source.updatedAt || !destination.updatedAt) return undefined;
+
   const sourceAge = now.getTime() - new Date(source.updatedAt).getTime();
   const destAge = now.getTime() - new Date(destination.updatedAt).getTime();
 

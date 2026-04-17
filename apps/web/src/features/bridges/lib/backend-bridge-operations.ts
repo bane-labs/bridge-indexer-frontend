@@ -1,30 +1,13 @@
-import type { BridgeFamily, ChainId } from "../types/bridge";
+import type {
+  BackendBridgeOperation,
+  BackendBridgeType,
+  BackendDirectionalInstanceSync,
+  BackendIndexerStateResponse,
+  BackendOperationsResponse,
+  BackendOverallHealth,
+} from "../types/backend-api";
 
-export type BackendBridgeType = BridgeFamily;
-export type BackendDirection = "deposit" | "withdrawal";
-export type BackendOperationStatus = "pending" | "completed" | "stuck";
-
-export interface BackendBridgeOperation {
-  bridge_type: BackendBridgeType;
-  direction: BackendDirection;
-  nonce: number;
-  source_chain: ChainId;
-  destination_chain: ChainId;
-  source_block_height: number;
-  dest_block_height?: number;
-  source_tx_hash: string;
-  dest_tx_hash?: string;
-  token_contract?: string;
-  root?: string;
-  timestamp: string;
-  completion_timestamp?: string;
-  status: BackendOperationStatus;
-}
-
-interface OperationsResponse {
-  operations: BackendBridgeOperation[];
-  total: number;
-}
+export type { BackendBridgeOperation, BackendBridgeType, BackendOperationsResponse };
 
 export interface BridgeOperationsApiClient {
   get: <T>(
@@ -57,7 +40,7 @@ export async function fetchAllBridgeOperationsViaClient(
       params.set("bridge_type", bridgeType);
     }
 
-    const payload = await api.get<OperationsResponse>(`/operations?${params.toString()}`, {
+    const payload = await api.get<BackendOperationsResponse>(`/operations?${params.toString()}`, {
       skipAuth: true,
     });
 
@@ -76,4 +59,31 @@ export async function fetchAllBridgeOperationsViaClient(
   }
 
   return all;
+}
+
+/**
+ * Fetches directional sync instances from the backend.
+ */
+export async function fetchSyncInstancesViaClient(
+  api: BridgeOperationsApiClient
+): Promise<BackendDirectionalInstanceSync[]> {
+  return api.get<BackendDirectionalInstanceSync[]>("/sync/instances", { skipAuth: true });
+}
+
+/**
+ * Fetches overall bridge health from the backend.
+ */
+export async function fetchHealthViaClient(
+  api: BridgeOperationsApiClient
+): Promise<BackendOverallHealth> {
+  return api.get<BackendOverallHealth>("/health", { skipAuth: true });
+}
+
+/**
+ * Fetches indexer state from the backend.
+ */
+export async function fetchIndexerStateViaClient(
+  api: BridgeOperationsApiClient
+): Promise<BackendIndexerStateResponse> {
+  return api.get<BackendIndexerStateResponse>("/indexer/state", { skipAuth: true });
 }

@@ -15,7 +15,7 @@ export interface BridgeSideState {
   nonce: number;
   root: string;
   blockNumber?: number;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 /** Status of a single directional bridge instance. */
@@ -30,6 +30,10 @@ export interface DirectionalBridgeStatus {
   syncStatus: SyncStatus;
   isStale: boolean;
   lastUpdatedAt: string;
+  /** Server-provided sync reason from /sync/instances. */
+  syncReason?: string;
+  /** Nonce lag (source - destination). */
+  deltaNonce?: number;
 }
 
 /** A group of directional bridges under a single bridge family/token. */
@@ -50,6 +54,12 @@ export interface BridgeDashboardSummary {
   syncing: number;
   unknown: number;
   lastRefreshedAt: string;
+  /** Overall health status from backend. */
+  healthStatus?: "healthy" | "degraded" | "unhealthy";
+  /** Total pending operations across all bridge types. */
+  pendingOperations?: number;
+  /** Total stuck operations across all bridge types. */
+  stuckOperations?: number;
 }
 
 /** Complete dashboard data response. */

@@ -9,7 +9,7 @@ import { resolveTokenSymbol } from "../lib/bridge-operation-utils";
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
 import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
 
-import type { BackendBridgeOperation } from "../lib/backend-bridge-operations";
+import type { BackendBridgeOperation } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
@@ -33,6 +33,10 @@ function buildRows(
       sourceTxHash: op.source_tx_hash,
       destinationTxHash: op.dest_tx_hash,
       settledAt: op.completion_timestamp,
+      status: op.status,
+      amount: op.amount,
+      fromAddress: op.from_address,
+      toAddress: op.to_address,
     }));
 }
 

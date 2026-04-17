@@ -18,8 +18,8 @@ export function deriveSyncStatus(
   destination: BridgeSideState,
   now = new Date()
 ): SyncStatus {
-  const sourceDate = new Date(source.updatedAt);
-  const destDate = new Date(destination.updatedAt);
+  const sourceDate = source.updatedAt ? new Date(source.updatedAt) : now;
+  const destDate = destination.updatedAt ? new Date(destination.updatedAt) : now;
   const latestUpdate = Math.max(sourceDate.getTime(), destDate.getTime());
 
   // Check staleness first

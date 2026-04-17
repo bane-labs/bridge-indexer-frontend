@@ -4,9 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApiClient } from "@/lib/api/hooks";
 
-import { fetchAllBridgeOperationsViaClient } from "../lib/backend-bridge-operations";
+import {
+  fetchHealthViaClient,
+  fetchIndexerStateViaClient,
+  fetchSyncInstancesViaClient,
+} from "../lib/backend-bridge-operations";
 import { buildDashboardData } from "../lib/bridge-status";
-import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
+import { extractHealthSummary, mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
 
 import type { BridgeDashboardData } from "../types/bridge";
 
@@ -16,10 +20,21 @@ export function useBridgeDashboard() {
   return useQuery<BridgeDashboardData>({
     queryKey: ["bridge-dashboard"],
     queryFn: async () => {
-      const operations = await fetchAllBridgeOperationsViaClient(api);
-      const statuses = mapOperationsToDirectionalStatuses(operations);
+      const [syncInstances, health, indexerState] = await Promise.all([
+        fetchSyncInstancesViaClient(api),
+        fetchHealthViaClient(api),
+        fetchIndexerStateViaClient(api),
+      ]);
 
-      return buildDashboardData(statuses);
+      const statuses = mapSyncInstancesToStatuses(syncInstances, indexerState);
+      const dashboard = buildDashboardData(statuses);
+
+      const healthSummary = extractHealthSummary(health);
+      dashboard.summary.healthStatus = healthSummary.healthStatus;
+      dashboard.summary.pendingOperations = healthSummary.pendingOperations;
+      dashboard.summary.stuckOperations = healthSummary.stuckOperations;
+
+      return dashboard;
     },
     staleTime: 30000,
     refetchInterval: 60000,

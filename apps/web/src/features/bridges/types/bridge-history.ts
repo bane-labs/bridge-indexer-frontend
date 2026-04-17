@@ -8,6 +8,14 @@ export interface BridgeOperationHistoryRow {
   sourceTxHash?: string;
   destinationTxHash?: string;
   settledAt?: string;
+  /** Operation status: pending, completed, or stuck. */
+  status: "pending" | "completed" | "stuck";
+  /** Transfer amount (string for big number safety). */
+  amount?: string;
+  /** Sender address on source chain. */
+  fromAddress?: string;
+  /** Recipient address on destination chain. */
+  toAddress?: string;
 }
 
 /** History for one direction of a bridge. */

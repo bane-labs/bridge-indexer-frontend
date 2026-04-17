@@ -2,7 +2,7 @@ import { resolveTokenSymbol } from "./bridge-operation-utils";
 import { deriveSyncStatus, isDataStale } from "./bridge-status";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
-import type { BackendBridgeOperation, BackendOperationStatus } from "./backend-bridge-operations";
+import type { BackendBridgeOperation, BackendOperationStatus } from "../types/backend-api";
 
 interface OperationGroup {
   bridgeFamily: DirectionalBridgeStatus["bridgeFamily"];

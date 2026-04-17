@@ -37,6 +37,7 @@ const NATIVE_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 10 }, (_, i) => ({
         id: `native-n3x-${i}`,
         nonce: 14_832 - i,
+        status: i < 8 ? "completed" : "pending",
         root: mockRoot("a3f1c9e7d4b82056fa9301ee", i),
         sourceTxHash: mockTxHash("9a1b2c3d4e5f60718293a4b5c6d7e8f9", i),
         destinationTxHash: i < 8 ? mockTxHash("f0e1d2c3b4a596870a1b2c3d", i) : undefined,
@@ -49,6 +50,7 @@ const NATIVE_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 10 }, (_, i) => ({
         id: `native-xn3-${i}`,
         nonce: 11_205 - i,
+        status: i < 9 ? "completed" : "pending",
         root: mockRoot("b7e4a2d6c93f10584e8b2a61", i),
         sourceTxHash: mockTxHash("5566778899001122334455aa", i),
         destinationTxHash: i < 9 ? mockTxHash("eeff001122334455aabbccdd", i) : undefined,
@@ -73,6 +75,7 @@ const MESSAGE_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 12 }, (_, i) => ({
         id: `msg-n3x-${i}`,
         nonce: 6_419 - i,
+        status: i < 10 ? "completed" : "pending",
         root: mockRoot("d2c8e1f47a5b930861e4d7c2", i),
         sourceTxHash: mockTxHash("8899001122334455667788bb", i),
         destinationTxHash: i < 10 ? mockTxHash("001122aabbccddeeff0011cc", i) : undefined,
@@ -85,6 +88,7 @@ const MESSAGE_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 12 }, (_, i) => ({
         id: `msg-xn3-${i}`,
         nonce: 5_312 - i,
+        status: i < 11 ? "completed" : "pending",
         root: mockRoot("e3d9f2a58b6c041972f5e8d3", i),
         sourceTxHash: mockTxHash("aa00112233445566778899dd", i),
         destinationTxHash: i < 11 ? mockTxHash("112233aabbccddeeff0011ee", i) : undefined,
@@ -110,6 +114,7 @@ const TOKEN_NEO_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 12 }, (_, i) => ({
         id: `neo-n3x-${i}`,
         nonce: 3_241 - i,
+        status: i < 10 ? "completed" : "pending",
         root: mockRoot("f4ea93b69c7d152a83a6f9e4", i),
         sourceTxHash: mockTxHash("bb11223344556677889900ff", i),
         destinationTxHash: i < 10 ? mockTxHash("223344aabbccddeeff001122", i) : undefined,
@@ -122,6 +127,7 @@ const TOKEN_NEO_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 12 }, (_, i) => ({
         id: `neo-xn3-${i}`,
         nonce: 2_819 - i,
+        status: i < 11 ? "completed" : "pending",
         root: mockRoot("c1b9d0e36b4a820750d3c6b1", i),
         sourceTxHash: mockTxHash("ee44556677889900112233aa", i),
         destinationTxHash: i < 11 ? mockTxHash("445566aabbccddeeff001144", i) : undefined,
@@ -147,6 +153,7 @@ const TOKEN_GAS_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 10 }, (_, i) => ({
         id: `gas-n3x-${i}`,
         nonce: 8_102 - i,
+        status: i < 8 ? "completed" : "pending",
         root: mockRoot("a1b2c3d4e5f6a7b8c9d0e1f2", i),
         sourceTxHash: mockTxHash("aa11bb22cc33dd44ee55ff66", i),
         destinationTxHash: i < 8 ? mockTxHash("667788aabbccddeeff001166", i) : undefined,
@@ -159,6 +166,7 @@ const TOKEN_GAS_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 10 }, (_, i) => ({
         id: `gas-xn3-${i}`,
         nonce: 7_450 - i,
+        status: i < 9 ? "completed" : "pending",
         root: mockRoot("c3d4e5f6a7b8c9d0e1f2a3b4", i),
         sourceTxHash: mockTxHash("cc33dd44ee55ff66aa11bb22", i),
         destinationTxHash: i < 9 ? mockTxHash("889900aabbccddeeff001188", i) : undefined,
@@ -184,6 +192,7 @@ const TOKEN_BNEO_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 15 }, (_, i) => ({
         id: `bneo-n3x-${i}`,
         nonce: 1_823 - i,
+        status: i < 13 ? "completed" : "pending",
         root: mockRoot("d5e6f7a8b9c0d1e2f3a4b5c6", i),
         sourceTxHash: mockTxHash("1122334455667788990011ab", i),
         destinationTxHash: i < 13 ? mockTxHash("aabb112233445566778899cd", i) : undefined,
@@ -196,6 +205,7 @@ const TOKEN_BNEO_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 15 }, (_, i) => ({
         id: `bneo-xn3-${i}`,
         nonce: 1_501 - i,
+        status: i < 12 ? "completed" : "pending",
         root: mockRoot("e6f7a8b9c0d1e2f3a4b5c6d7", i),
         sourceTxHash: mockTxHash("2233445566778899001122cd", i),
         destinationTxHash: i < 12 ? mockTxHash("bbcc223344556677889900ef", i) : undefined,
@@ -221,6 +231,7 @@ const TOKEN_FUSDT_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 8 }, (_, i) => ({
         id: `fusdt-n3x-${i}`,
         nonce: 421 - i,
+        status: i < 6 ? "completed" : "pending",
         root: mockRoot("f7a8b9c0d1e2f3a4b5c6d7e8", i),
         sourceTxHash: mockTxHash("3344556677889900112233ef", i),
         destinationTxHash: i < 6 ? mockTxHash("ccdd33445566778899001100", i) : undefined,
@@ -233,6 +244,7 @@ const TOKEN_FUSDT_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 8 }, (_, i) => ({
         id: `fusdt-xn3-${i}`,
         nonce: 389 - i,
+        status: i < 7 ? "completed" : "pending",
         root: mockRoot("a8b9c0d1e2f3a4b5c6d7e8f9", i),
         sourceTxHash: mockTxHash("4455667788990011223344ab", i),
         destinationTxHash: i < 7 ? mockTxHash("ddee445566778899001122ff", i) : undefined,

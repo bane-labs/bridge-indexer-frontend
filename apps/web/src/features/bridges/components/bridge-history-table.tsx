@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@atlas/ui";
+import { Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@atlas/ui";
 
 import { formatSettledTime, formatSettledTooltip } from "../lib/bridge-history-formatters";
 import { formatNonce } from "../lib/formatters";
@@ -15,9 +15,18 @@ interface BridgeHistoryTableProps {
   destinationChain: ChainId;
 }
 
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
+> = {
+  completed: { label: "Completed", variant: "success" },
+  pending: { label: "Pending", variant: "warning" },
+  stuck: { label: "Stuck", variant: "destructive" },
+};
+
 /**
  * History table for a single bridge direction.
- * Columns: Nonce, Root, Source Tx, Dest Tx, Settled.
+ * Columns: Nonce, Status, Amount, Root, Source Tx, Dest Tx, Settled.
  */
 export function BridgeHistoryTable({
   rows,
@@ -34,6 +43,8 @@ export function BridgeHistoryTable({
         <TableHeader className="bg-muted/50 sticky top-0 z-10">
           <TableRow>
             <TableHead className="w-20">Nonce</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Amount</TableHead>
             <TableHead>Root</TableHead>
             <TableHead>Source Tx</TableHead>
             <TableHead>Dest Tx</TableHead>
@@ -41,33 +52,48 @@ export function BridgeHistoryTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
-              <TableCell className="font-mono tabular-nums">{formatNonce(row.nonce)}</TableCell>
-              <TableCell>
-                <HashCell hash={row.root} />
-              </TableCell>
-              <TableCell>
-                <TxLinkCell txHash={row.sourceTxHash} chainId={sourceChain} />
-              </TableCell>
-              <TableCell>
-                <TxLinkCell txHash={row.destinationTxHash} chainId={destinationChain} />
-              </TableCell>
-              <TableCell className="text-right whitespace-nowrap">
-                {row.settledAt ? (
-                  <time
-                    dateTime={row.settledAt}
-                    title={formatSettledTooltip(row.settledAt)}
-                    className="text-sm"
-                  >
-                    {formatSettledTime(row.settledAt)}
-                  </time>
-                ) : (
-                  <span className="text-muted-foreground text-sm italic">Pending</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {rows.map((row) => {
+            const statusConfig = STATUS_CONFIG[row.status] ?? {
+              label: row.status,
+              variant: "secondary" as const,
+            };
+
+            return (
+              <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
+                <TableCell className="font-mono tabular-nums">{formatNonce(row.nonce)}</TableCell>
+                <TableCell>
+                  <Badge variant={statusConfig.variant} size="sm">
+                    {statusConfig.label}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono text-sm tabular-nums">
+                  {row.amount ?? "—"}
+                </TableCell>
+                <TableCell>
+                  <HashCell hash={row.root} />
+                </TableCell>
+                <TableCell>
+                  <TxLinkCell txHash={row.sourceTxHash} chainId={sourceChain} />
+                </TableCell>
+                <TableCell>
+                  <TxLinkCell txHash={row.destinationTxHash} chainId={destinationChain} />
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  {row.settledAt ? (
+                    <time
+                      dateTime={row.settledAt}
+                      title={formatSettledTooltip(row.settledAt)}
+                      className="text-sm"
+                    >
+                      {formatSettledTime(row.settledAt)}
+                    </time>
+                  ) : (
+                    <span className="text-muted-foreground text-sm italic">Pending</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

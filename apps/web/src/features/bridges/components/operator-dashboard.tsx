@@ -88,15 +88,46 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Out of Sync" value={summary.outOfSync} colorClass="text-red-400" />
           <KpiCard label="Stale" value={summary.stale} colorClass="text-amber-400" />
           {summary.unknown > 0 && <KpiCard label="Unknown" value={summary.unknown} />}
+          {summary.pendingOperations !== undefined && summary.pendingOperations > 0 && (
+            <>
+              <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
+              <KpiCard
+                label="Pending"
+                value={summary.pendingOperations}
+                colorClass="text-blue-400"
+              />
+            </>
+          )}
+          {summary.stuckOperations !== undefined && summary.stuckOperations > 0 && (
+            <KpiCard label="Stuck" value={summary.stuckOperations} colorClass="text-red-400" />
+          )}
         </div>
-        <span
-          className="text-muted-foreground text-xs tabular-nums"
-          title={summary.lastRefreshedAt}
-        >
-          Refreshed {relativeTime(summary.lastRefreshedAt)}
-        </span>
+        <div className="flex items-center gap-3">
+          {summary.healthStatus && <HealthStatusIndicator status={summary.healthStatus} />}
+          <span
+            className="text-muted-foreground text-xs tabular-nums"
+            title={summary.lastRefreshedAt}
+          >
+            Refreshed {relativeTime(summary.lastRefreshedAt)}
+          </span>
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function HealthStatusIndicator({ status }: { status: "healthy" | "degraded" | "unhealthy" }) {
+  const config = {
+    healthy: { label: "Healthy", color: "text-emerald-500", dot: "bg-emerald-500" },
+    degraded: { label: "Degraded", color: "text-amber-400", dot: "bg-amber-400" },
+    unhealthy: { label: "Unhealthy", color: "text-red-400", dot: "bg-red-400" },
+  }[status];
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.color}`}>
+      <span className={`inline-block h-2 w-2 rounded-full ${config.dot}`} aria-hidden="true" />
+      {config.label}
+    </span>
   );
 }
 

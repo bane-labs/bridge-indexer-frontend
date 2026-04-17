@@ -31,6 +31,10 @@ function buildRows(
       sourceTxHash: op.source_tx_hash,
       destinationTxHash: op.dest_tx_hash,
       settledAt: op.completion_timestamp,
+      status: op.status,
+      amount: op.amount,
+      fromAddress: op.from_address,
+      toAddress: op.to_address,
     }));
 }
 

@@ -35,7 +35,8 @@ export function shortenHash(hash: string, prefixLen = 6, suffixLen = 4): string 
 /**
  * Format an ISO timestamp to a locale-appropriate string.
  */
-export function formatTimestamp(iso: string): string {
+export function formatTimestamp(iso: string | undefined): string {
+  if (!iso) return "Unknown";
   const date = new Date(iso);
   if (isNaN(date.getTime())) return "Invalid date";
   return date.toLocaleString("en-US", {
@@ -51,7 +52,8 @@ export function formatTimestamp(iso: string): string {
 /**
  * Return a human-readable relative time string, e.g. "3 min ago".
  */
-export function relativeTime(iso: string, now = new Date()): string {
+export function relativeTime(iso: string | undefined, now = new Date()): string {
+  if (!iso) return "Unknown";
   const date = new Date(iso);
   if (isNaN(date.getTime())) return "Unknown";
 
