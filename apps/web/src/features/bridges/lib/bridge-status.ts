@@ -18,16 +18,8 @@ export function deriveSyncStatus(
   destination: BridgeSideState,
   now = new Date()
 ): SyncStatus {
-  const sourceDate = source.updatedAt ? new Date(source.updatedAt) : now;
-  const destDate = destination.updatedAt ? new Date(destination.updatedAt) : now;
-  const latestUpdate = Math.max(sourceDate.getTime(), destDate.getTime());
-
-  // Check staleness first
-  if (now.getTime() - latestUpdate > STALE_THRESHOLD_MS) {
-    return "stale";
-  }
-
-  // If nonce and root match, the bridge is synced
+  // If nonce and root match, the bridge is synced — regardless of data age.
+  // Correct nonces and roots take priority over staleness.
   if (source.nonce === destination.nonce && source.root === destination.root) {
     return "synced";
   }
@@ -36,6 +28,14 @@ export function deriveSyncStatus(
   const nonceDiff = Math.abs(source.nonce - destination.nonce);
   if (nonceDiff <= 2 && nonceDiff > 0) {
     return "syncing";
+  }
+
+  // Only report stale when the data is outdated AND we can't confirm sync state
+  const sourceDate = source.updatedAt ? new Date(source.updatedAt) : now;
+  const destDate = destination.updatedAt ? new Date(destination.updatedAt) : now;
+  const latestUpdate = Math.max(sourceDate.getTime(), destDate.getTime());
+  if (now.getTime() - latestUpdate > STALE_THRESHOLD_MS) {
+    return "stale";
   }
 
   return "out_of_sync";
