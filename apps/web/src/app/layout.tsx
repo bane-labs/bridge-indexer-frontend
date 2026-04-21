@@ -34,36 +34,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const key = "theme-preference";
-                  const stored = localStorage.getItem(key);
-                  const preference = (stored === "light" || stored === "dark" || stored === "system") ? stored : "system";
-                  
-                  let theme = preference;
-                  if (preference === "system") {
-                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                  }
-                  
-                  if (theme === "dark") {
-                    document.documentElement.classList.add("dark");
-                  } else {
-                    document.documentElement.classList.remove("dark");
-                  }
-                } catch (e) {
-                  // localStorage might be unavailable
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
+    <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <MainProvider>
           <GlobalErrorHandler />
