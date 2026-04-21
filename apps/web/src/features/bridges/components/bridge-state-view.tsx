@@ -33,14 +33,17 @@ export function BridgeStateView({ sections }: BridgeStateViewProps) {
 
       // Filter by status
       if (filter !== "all") {
-        const hasMatchingDirection = section.directions.some((d) => d.syncStatus === filter);
+        const hasMatchingDirection = section.directions.some((d) => {
+          if (filter === "lagging") return d.indexerStatus === "lagging";
+          return d.operationStatus === filter;
+        });
         if (!hasMatchingDirection) return false;
       }
 
-      // Stale only toggle
+      // Lagging-only toggle
       if (showStaleOnly) {
-        const hasStale = section.directions.some((d) => d.isStale);
-        if (!hasStale) return false;
+        const hasLagging = section.directions.some((d) => d.indexerStatus !== "fresh");
+        if (!hasLagging) return false;
       }
 
       return true;

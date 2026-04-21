@@ -35,12 +35,15 @@ export interface BridgeStatePageData {
 /** Aggregate counts for the state page. */
 export interface BridgeStateSummary {
   total: number;
+  // Operation status
   synced: number;
-  outOfSync: number;
-  stale: number;
-  syncing: number;
-  unknown: number;
+  pending: number;
+  delayed: number;
+  // Indexer status
+  fresh: number;
+  lagging: number;
+  indexerUnknown: number;
 }
 
 /** Filter state for the bridge state page. */
-export type BridgeStateFilter = "all" | "synced" | "out_of_sync" | "stale";
+export type BridgeStateFilter = "all" | "synced" | "pending" | "delayed" | "lagging";

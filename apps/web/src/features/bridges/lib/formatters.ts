@@ -1,4 +1,10 @@
-import type { BridgeDirection, BridgeSideState, ChainId, SyncStatus } from "../types/bridge";
+import type {
+  BridgeDirection,
+  BridgeSideState,
+  ChainId,
+  IndexerStatus,
+  OperationStatus,
+} from "../types/bridge";
 
 /** Map chain IDs to human-readable labels. */
 const CHAIN_LABELS: Record<ChainId, string> = {
@@ -70,17 +76,26 @@ export function relativeTime(iso: string | undefined, now = new Date()): string 
   return `${days}d ago`;
 }
 
-/** Sync status display text. */
-const SYNC_STATUS_LABELS: Record<SyncStatus, string> = {
+/** Operation status display text. */
+const OPERATION_STATUS_LABELS: Record<OperationStatus, string> = {
   synced: "Synced",
-  out_of_sync: "Out of Sync",
-  syncing: "Syncing",
-  stale: "Stale",
+  pending: "Pending",
+  delayed: "Delayed",
+};
+
+export function getOperationStatusLabel(status: OperationStatus): string {
+  return OPERATION_STATUS_LABELS[status];
+}
+
+/** Indexer status display text. */
+const INDEXER_STATUS_LABELS: Record<IndexerStatus, string> = {
+  fresh: "Fresh",
+  lagging: "Lagging",
   unknown: "Unknown",
 };
 
-export function getSyncStatusLabel(status: SyncStatus): string {
-  return SYNC_STATUS_LABELS[status];
+export function getIndexerStatusLabel(status: IndexerStatus): string {
+  return INDEXER_STATUS_LABELS[status];
 }
 
 /** Generate a bridge slug from family + optional token symbol. */

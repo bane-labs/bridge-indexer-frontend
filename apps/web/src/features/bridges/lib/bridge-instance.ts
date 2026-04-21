@@ -1,7 +1,13 @@
 import { deriveComparisonSummary } from "./bridge-comparison";
 import { getDirectionLabel } from "./formatters";
 
-import type { BridgeFamily, ChainId, DirectionalBridgeStatus, SyncStatus } from "../types/bridge";
+import type {
+  BridgeFamily,
+  ChainId,
+  DirectionalBridgeStatus,
+  IndexerStatus,
+  OperationStatus,
+} from "../types/bridge";
 import type { ComparisonSummary } from "../types/bridge-state";
 
 /**
@@ -24,8 +30,10 @@ export interface BridgeInstanceRow {
   destinationNonce: number;
   /** source nonce - destination nonce */
   lag: number;
-  syncStatus: SyncStatus;
-  isStale: boolean;
+  /** Relay progress of the bridge operation. */
+  operationStatus: OperationStatus;
+  /** Data freshness of the indexer backing this instance. */
+  indexerStatus: IndexerStatus;
   lastUpdatedAt: string;
   /** Slug for linking to the detail page */
   slug: string;
@@ -36,11 +44,9 @@ export interface BridgeInstanceRow {
   severity: number;
 }
 
-const SEVERITY_MAP: Record<SyncStatus, number> = {
-  out_of_sync: 0,
-  stale: 1,
-  syncing: 2,
-  unknown: 2,
+const SEVERITY_MAP: Record<OperationStatus, number> = {
+  delayed: 0,
+  pending: 1,
   synced: 3,
 };
 
@@ -52,9 +58,10 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
   return statuses.map((d) => {
     const lag = d.source.nonce - d.destination.nonce;
     const rootMatch = d.source.root === d.destination.root;
-    const comparison = d.isStale
-      ? ("data_stale" as ComparisonSummary)
-      : deriveComparisonSummary(d.source, d.destination);
+    const comparison =
+      d.indexerStatus !== "fresh"
+        ? ("data_stale" as ComparisonSummary)
+        : deriveComparisonSummary(d.source, d.destination);
 
     const assetLabel = d.tokenSymbol ?? (d.bridgeFamily === "native" ? "Native" : "Message");
     const FAMILY_TYPE_LABELS: Record<BridgeFamily, string> = {
@@ -78,13 +85,13 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
       sourceNonce: d.source.nonce,
       destinationNonce: d.destination.nonce,
       lag,
-      syncStatus: d.syncStatus,
-      isStale: d.isStale,
+      operationStatus: d.operationStatus,
+      indexerStatus: d.indexerStatus,
       lastUpdatedAt: d.lastUpdatedAt,
       slug,
       rootMatch,
       comparisonSummary: comparison,
-      severity: SEVERITY_MAP[d.syncStatus] ?? 2,
+      severity: SEVERITY_MAP[d.operationStatus] ?? 1,
     };
   });
 }
@@ -97,7 +104,7 @@ export function sortBySeverity(rows: BridgeInstanceRow[]): BridgeInstanceRow[] {
   });
 }
 
-/** Get only rows that need attention (not synced). */
+/** Get only rows that need attention (operation not synced). */
 export function getProblematicRows(rows: BridgeInstanceRow[]): BridgeInstanceRow[] {
-  return sortBySeverity(rows.filter((r) => r.syncStatus !== "synced"));
+  return sortBySeverity(rows.filter((r) => r.operationStatus !== "synced"));
 }

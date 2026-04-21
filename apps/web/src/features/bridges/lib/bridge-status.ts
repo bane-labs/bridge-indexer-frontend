@@ -3,42 +3,60 @@ import type {
   BridgeDashboardSummary,
   BridgeSideState,
   DirectionalBridgeStatus,
-  SyncStatus,
+  IndexerStatus,
+  OperationStatus,
 } from "../types/bridge";
 
 /** Threshold in milliseconds to consider data stale (5 minutes). */
 const STALE_THRESHOLD_MS = 5 * 60 * 1000;
 
 /**
- * Derive sync status from source and destination state.
- * This provides client-side resilience even if the backend later supplies status directly.
+ * Derive operation status from source and destination nonce/root state.
+ * Used in the legacy path (deriving from operation lists, not /sync/instances).
+ */
+export function deriveOperationStatus(
+  source: BridgeSideState,
+  destination: BridgeSideState
+): OperationStatus {
+  // If nonce and root match, the bridge is synced — regardless of data age.
+  if (source.nonce === destination.nonce && source.root === destination.root) {
+    return "synced";
+  }
+
+  // If nonces are close (within 2), consider it within the relay window
+  const nonceDiff = Math.abs(source.nonce - destination.nonce);
+  if (nonceDiff <= 2 && nonceDiff > 0) {
+    return "pending";
+  }
+
+  return "delayed";
+}
+
+/**
+ * Derive indexer status from the latest update timestamp.
+ * Used in the legacy path when we don't have /indexer/state data.
+ */
+export function deriveIndexerStatus(
+  latestUpdatedAt: string | undefined,
+  now = new Date()
+): IndexerStatus {
+  if (!latestUpdatedAt) return "unknown";
+  const date = new Date(latestUpdatedAt);
+  if (isNaN(date.getTime())) return "unknown";
+  return now.getTime() - date.getTime() > STALE_THRESHOLD_MS ? "lagging" : "fresh";
+}
+
+/**
+ * @deprecated Use deriveOperationStatus + deriveIndexerStatus separately.
+ * Kept for call-sites that have not been migrated yet.
  */
 export function deriveSyncStatus(
   source: BridgeSideState,
   destination: BridgeSideState,
   now = new Date()
-): SyncStatus {
-  // If nonce and root match, the bridge is synced — regardless of data age.
-  // Correct nonces and roots take priority over staleness.
-  if (source.nonce === destination.nonce && source.root === destination.root) {
-    return "synced";
-  }
-
-  // If nonces are close (within 2), consider it syncing
-  const nonceDiff = Math.abs(source.nonce - destination.nonce);
-  if (nonceDiff <= 2 && nonceDiff > 0) {
-    return "syncing";
-  }
-
-  // Only report stale when the data is outdated AND we can't confirm sync state
-  const sourceDate = source.updatedAt ? new Date(source.updatedAt) : now;
-  const destDate = destination.updatedAt ? new Date(destination.updatedAt) : now;
-  const latestUpdate = Math.max(sourceDate.getTime(), destDate.getTime());
-  if (now.getTime() - latestUpdate > STALE_THRESHOLD_MS) {
-    return "stale";
-  }
-
-  return "out_of_sync";
+): OperationStatus {
+  void now; // indexer staleness is now a separate dimension
+  return deriveOperationStatus(source, destination);
 }
 
 /**
@@ -55,17 +73,13 @@ export function isDataStale(lastUpdatedAt: string, now = new Date()): boolean {
 export function computeDashboardSummary(
   directions: DirectionalBridgeStatus[]
 ): BridgeDashboardSummary {
-  const counts: Record<SyncStatus, number> = {
-    synced: 0,
-    out_of_sync: 0,
-    syncing: 0,
-    stale: 0,
-    unknown: 0,
-  };
+  const opCounts: Record<OperationStatus, number> = { synced: 0, pending: 0, delayed: 0 };
+  const idxCounts: Record<IndexerStatus, number> = { fresh: 0, lagging: 0, unknown: 0 };
 
   let latestUpdate = "";
   for (const d of directions) {
-    counts[d.syncStatus]++;
+    opCounts[d.operationStatus]++;
+    idxCounts[d.indexerStatus]++;
     if (!latestUpdate || d.lastUpdatedAt > latestUpdate) {
       latestUpdate = d.lastUpdatedAt;
     }
@@ -73,11 +87,12 @@ export function computeDashboardSummary(
 
   return {
     total: directions.length,
-    synced: counts.synced,
-    outOfSync: counts.out_of_sync,
-    stale: counts.stale,
-    syncing: counts.syncing,
-    unknown: counts.unknown,
+    synced: opCounts.synced,
+    pending: opCounts.pending,
+    delayed: opCounts.delayed,
+    fresh: idxCounts.fresh,
+    lagging: idxCounts.lagging,
+    indexerUnknown: idxCounts.unknown,
     lastRefreshedAt: latestUpdate || new Date().toISOString(),
   };
 }

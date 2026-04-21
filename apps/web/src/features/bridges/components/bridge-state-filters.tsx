@@ -7,8 +7,9 @@ import type { BridgeStateFilter } from "../types/bridge-state";
 const FILTER_OPTIONS: { value: BridgeStateFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "synced", label: "Synced" },
-  { value: "out_of_sync", label: "Out of Sync" },
-  { value: "stale", label: "Stale" },
+  { value: "pending", label: "Pending" },
+  { value: "delayed", label: "Delayed" },
+  { value: "lagging", label: "Indexer Lagging" },
 ];
 
 interface BridgeStateFiltersProps {

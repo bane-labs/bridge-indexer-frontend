@@ -9,37 +9,50 @@
 
 import { resolveTokenSymbol } from "./bridge-operation-utils";
 
-import type { ChainId, DirectionalBridgeStatus, SyncStatus } from "../types/bridge";
+import type {
+  ChainId,
+  DirectionalBridgeStatus,
+  IndexerStatus,
+  OperationStatus,
+} from "../types/bridge";
 import type {
   BackendDirectionalInstanceSync,
   BackendDirectionalSyncStatus,
+  BackendIndexerState,
   BackendIndexerStateResponse,
   BackendOverallHealth,
 } from "../types/backend-api";
 
 const EMPTY_ROOT = "0x0";
 
-/** Map backend sync status to frontend SyncStatus. */
-function mapSyncStatus(
+/** Map backend sync status to operation status (bridge relay progress). */
+function mapOperationStatus(
   backendStatus: BackendDirectionalSyncStatus,
   deltaNonce?: number
-): SyncStatus {
+): OperationStatus {
   switch (backendStatus) {
     case "synced":
       return "synced";
     case "source_ahead":
-      // Small lag → syncing, large lag → out_of_sync
+      // Small lag → within relay window (pending), larger lag → overdue (delayed)
       if (deltaNonce !== undefined && deltaNonce <= 2) {
-        return "syncing";
+        return "pending";
       }
-      return "out_of_sync";
+      return "delayed";
     case "root_mismatch":
-      return "out_of_sync";
+      return "delayed";
     case "unknown":
-      return "unknown";
+      return "delayed";
     default:
-      return "unknown";
+      return "delayed";
   }
+}
+
+/** Map backend indexer state to indexer status (data freshness). */
+function mapIndexerStatus(state: BackendIndexerState | null): IndexerStatus {
+  if (!state) return "unknown";
+  if (state.is_syncing) return "lagging";
+  return "fresh";
 }
 
 /** Map a single backend sync instance to frontend DirectionalBridgeStatus. */
@@ -61,7 +74,8 @@ function mapInstance(
   const tokenSymbol =
     sync.bridge_type === "token" ? resolveTokenSymbol(sync.src_token ?? undefined) : undefined;
 
-  const syncStatus = mapSyncStatus(sync.status, sync.delta_nonce ?? undefined);
+  const operationStatus = mapOperationStatus(sync.status, sync.delta_nonce ?? undefined);
+  const indexerStatus = mapIndexerStatus(sourceIndexer);
 
   return {
     id: sync.id,
@@ -79,8 +93,8 @@ function mapInstance(
       root: sync.dst_root ?? EMPTY_ROOT,
       updatedAt: destUpdatedAt,
     },
-    syncStatus,
-    isStale: false, // Backend provides real-time data; staleness detected by indexer state
+    operationStatus,
+    indexerStatus,
     lastUpdatedAt,
     syncReason: sync.reason,
     deltaNonce: sync.delta_nonce ?? undefined,

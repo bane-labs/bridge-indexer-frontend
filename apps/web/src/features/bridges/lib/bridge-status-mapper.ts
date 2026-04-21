@@ -1,5 +1,5 @@
 import { resolveTokenSymbol } from "./bridge-operation-utils";
-import { deriveSyncStatus, isDataStale } from "./bridge-status";
+import { deriveIndexerStatus, deriveOperationStatus } from "./bridge-status";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
 import type { BackendBridgeOperation, BackendOperationStatus } from "../types/backend-api";
@@ -96,11 +96,13 @@ function mapGroupToStatus(group: OperationGroup): DirectionalBridgeStatus | null
     updatedAt: destinationUpdatedAt,
   };
 
-  const syncStatus = deriveSyncStatus(source, destination);
   const lastUpdatedAt =
     new Date(source.updatedAt) > new Date(destination.updatedAt)
       ? source.updatedAt
       : destination.updatedAt;
+
+  const operationStatus = deriveOperationStatus(source, destination);
+  const indexerStatus = deriveIndexerStatus(lastUpdatedAt);
 
   return {
     id: `${group.bridgeFamily}${group.tokenSymbol ? `-${group.tokenSymbol.toLowerCase()}` : ""}-${group.sourceChain}-to-${group.destinationChain}`,
@@ -110,8 +112,8 @@ function mapGroupToStatus(group: OperationGroup): DirectionalBridgeStatus | null
     destinationChain: group.destinationChain,
     source,
     destination,
-    syncStatus,
-    isStale: isDataStale(lastUpdatedAt),
+    operationStatus,
+    indexerStatus,
     lastUpdatedAt,
   };
 }

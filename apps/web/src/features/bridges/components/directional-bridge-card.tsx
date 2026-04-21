@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui"
 import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 
 import { ChainStateRow } from "./chain-state-row";
-import { SyncStatusBadge } from "./sync-status-badge";
+import { OperationStatusBadge } from "./sync-status-badge";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
 
@@ -30,7 +30,7 @@ export function DirectionalBridgeCard({ bridge }: DirectionalBridgeCardProps) {
     <Card className="gap-4">
       <CardHeader className="gap-2">
         <div className="flex items-center justify-between gap-2">
-          <SyncStatusBadge status={bridge.syncStatus} />
+          <OperationStatusBadge status={bridge.operationStatus} />
         </div>
         <CardTitle className="text-base">{bridgeLabel}</CardTitle>
         <p className="text-muted-foreground text-sm">{directionLabel}</p>

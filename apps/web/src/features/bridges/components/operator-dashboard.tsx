@@ -24,21 +24,21 @@ import {
 } from "../lib/bridge-instance";
 import { relativeTime } from "../lib/formatters";
 
-import { SyncStatusBadge } from "./sync-status-badge";
+import { OperationStatusBadge } from "./sync-status-badge";
 
 import type { BridgeDashboardSummary, DirectionalBridgeStatus } from "../types/bridge";
 
 // ─── Filter types ─────────────────────────────────────────
-type StatusFilter = "all" | "synced" | "out_of_sync" | "syncing" | "stale";
+type StatusFilter = "all" | "synced" | "pending" | "delayed" | "lagging";
 type DirectionFilter = "all" | "neo_n3_to_neo_x" | "neo_x_to_neo_n3";
 type TypeFilter = "all" | "native" | "message" | "token";
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "synced", label: "Synced" },
-  { value: "out_of_sync", label: "Out of Sync" },
-  { value: "syncing", label: "Syncing" },
-  { value: "stale", label: "Stale" },
+  { value: "pending", label: "Pending" },
+  { value: "delayed", label: "Delayed" },
+  { value: "lagging", label: "Indexer Lagging" },
 ];
 
 const DIRECTION_OPTIONS: { value: DirectionFilter; label: string }[] = [
@@ -81,25 +81,39 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
     <Card className="border-border/60 bg-card/50 backdrop-blur">
       <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
         <div className="flex flex-wrap items-center gap-1">
+          {/* Operation status counts */}
           <KpiCard label="Total" value={summary.total} />
           <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
           <KpiCard label="Synced" value={summary.synced} colorClass="text-emerald-500" />
-          <KpiCard label="Syncing" value={summary.syncing} colorClass="text-blue-400" />
-          <KpiCard label="Out of Sync" value={summary.outOfSync} colorClass="text-red-400" />
-          <KpiCard label="Stale" value={summary.stale} colorClass="text-amber-400" />
-          {summary.unknown > 0 && <KpiCard label="Unknown" value={summary.unknown} />}
+          <KpiCard label="Pending" value={summary.pending} colorClass="text-blue-400" />
+          <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
+          {/* Indexer status counts */}
+          {summary.lagging > 0 && (
+            <>
+              <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
+              <KpiCard
+                label="Indexer Lagging"
+                value={summary.lagging}
+                colorClass="text-amber-400"
+              />
+            </>
+          )}
+          {summary.indexerUnknown > 0 && (
+            <KpiCard label="Indexer Unknown" value={summary.indexerUnknown} />
+          )}
+          {/* Health-derived operation counts */}
           {summary.pendingOperations !== undefined && summary.pendingOperations > 0 && (
             <>
               <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
               <KpiCard
-                label="Pending"
+                label="Pending Ops"
                 value={summary.pendingOperations}
                 colorClass="text-blue-400"
               />
             </>
           )}
           {summary.stuckOperations !== undefined && summary.stuckOperations > 0 && (
-            <KpiCard label="Stuck" value={summary.stuckOperations} colorClass="text-red-400" />
+            <KpiCard label="Stuck Ops" value={summary.stuckOperations} colorClass="text-red-400" />
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -298,8 +312,8 @@ function LagCell({ lag, status }: { lag: number; status: string }) {
     return <span className="font-mono text-sm text-emerald-500">0</span>;
   }
   let color = "text-amber-400";
-  if (status === "out_of_sync" || absLag > 5) color = "text-red-400";
-  else if (status === "syncing") color = "text-blue-400";
+  if (status === "delayed" || absLag > 5) color = "text-red-400";
+  else if (status === "pending") color = "text-blue-400";
   return <span className={`${color} font-mono text-sm font-semibold`}>{absLag}</span>;
 }
 
@@ -320,9 +334,9 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function getRowHighlight(syncStatus: string): string {
-  if (syncStatus === "out_of_sync") return "bg-red-500/2";
-  if (syncStatus === "stale") return "bg-amber-500/2";
+function getRowHighlight(operationStatus: string, indexerStatus: string): string {
+  if (operationStatus === "delayed") return "bg-red-500/2";
+  if (indexerStatus === "lagging") return "bg-amber-500/2";
   return "";
 }
 
@@ -358,10 +372,10 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
           {rows.map((row) => (
             <TableRow
               key={row.id}
-              className={`hover:bg-muted/30 transition-colors ${getRowHighlight(row.syncStatus)}`}
+              className={`hover:bg-muted/30 transition-colors ${getRowHighlight(row.operationStatus, row.indexerStatus)}`}
             >
               <TableCell>
-                <SyncStatusBadge status={row.syncStatus} />
+                <OperationStatusBadge status={row.operationStatus} />
               </TableCell>
               <TableCell className="text-foreground text-sm font-medium whitespace-nowrap">
                 {row.directionLabel}
@@ -377,7 +391,7 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
                 {row.destinationNonce.toLocaleString("en-US")}
               </TableCell>
               <TableCell className="text-right">
-                <LagCell lag={row.lag} status={row.syncStatus} />
+                <LagCell lag={row.lag} status={row.operationStatus} />
               </TableCell>
               <TableCell
                 className="text-muted-foreground text-right text-xs whitespace-nowrap"
@@ -431,7 +445,11 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
     }
 
     if (statusFilter !== "all") {
-      rows = rows.filter((r) => r.syncStatus === statusFilter);
+      if (statusFilter === "lagging") {
+        rows = rows.filter((r) => r.indexerStatus === "lagging");
+      } else {
+        rows = rows.filter((r) => r.operationStatus === statusFilter);
+      }
     }
 
     if (directionFilter !== "all") {
