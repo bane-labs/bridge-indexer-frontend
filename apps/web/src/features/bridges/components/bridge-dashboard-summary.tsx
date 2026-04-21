@@ -30,10 +30,12 @@ export function BridgeDashboardSummary({ summary }: BridgeDashboardSummaryProps)
         <Counter label="Total Bridges" value={summary.total} />
         <div className="bg-border h-8 w-px" aria-hidden="true" />
         <Counter label="Synced" value={summary.synced} className="text-success-text" />
-        <Counter label="Out of Sync" value={summary.outOfSync} className="text-destructive-text" />
-        <Counter label="Stale" value={summary.stale} className="text-warning-text" />
-        <Counter label="Syncing" value={summary.syncing} className="text-info-text" />
-        {summary.unknown > 0 && <Counter label="Unknown" value={summary.unknown} />}
+        <Counter label="Pending" value={summary.pending} className="text-info-text" />
+        <Counter label="Delayed" value={summary.delayed} className="text-destructive-text" />
+        {summary.lagging > 0 && (
+          <Counter label="Indexer Lagging" value={summary.lagging} className="text-warning-text" />
+        )}
+        {summary.indexerUnknown > 0 && <Counter label="Unknown" value={summary.indexerUnknown} />}
         <div className="text-muted-foreground ml-auto text-xs" title={summary.lastRefreshedAt}>
           Last refresh: {relativeTime(summary.lastRefreshedAt)}
         </div>

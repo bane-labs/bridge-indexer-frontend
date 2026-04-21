@@ -165,7 +165,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
               className="bg-background/60 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <SyncStatusBadge status={row.syncStatus} />
+                <OperationStatusBadge status={row.operationStatus} />
                 <span className="text-foreground truncate text-sm font-medium">
                   {row.directionLabel}
                 </span>
@@ -453,7 +453,7 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
     }
 
     if (directionFilter !== "all") {
-      const [src, , dst] = directionFilter.split("_to_");
+      const [src, dst] = directionFilter.split("_to_");
       rows = rows.filter((r) => r.sourceChain === src && r.destinationChain === dst);
     }
 

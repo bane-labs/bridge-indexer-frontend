@@ -104,7 +104,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
         {/* Direction heading + status */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-foreground text-sm font-semibold">{directionLabel}</span>
-          <SyncStatusBadge status={status.syncStatus} />
+          <SyncStatusBadge status={status.operationStatus} />
         </div>
 
         {/* Compact comparison grid */}
@@ -124,7 +124,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
           {/* Nonce lag */}
           <dd />
           <dd className="text-center">
-            <NonceLag lag={lag} syncStatus={status.syncStatus} />
+            <NonceLag lag={lag} syncStatus={status.operationStatus} />
           </dd>
           <dd />
 
@@ -185,7 +185,7 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
     );
   }
   const color =
-    syncStatus === "out_of_sync" || absLag > 5
+    syncStatus === "delayed" || absLag > 5
       ? "bg-red-500/10 text-red-400"
       : "bg-amber-500/10 text-amber-400";
   return (

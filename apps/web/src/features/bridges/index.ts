@@ -15,7 +15,6 @@ export type {
   BridgeSideState,
   ChainId,
   DirectionalBridgeStatus,
-  SyncStatus,
 } from "./types/bridge";
 
 // Types — bridge state

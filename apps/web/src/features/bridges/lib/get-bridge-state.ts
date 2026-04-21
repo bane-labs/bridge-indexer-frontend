@@ -22,7 +22,7 @@ function enrichDirection(status: DirectionalBridgeStatus): DirectionalBridgeSync
 
   return {
     ...status,
-    comparisonSummary: status.isStale ? "data_stale" : comparison,
+    comparisonSummary: status.indexerStatus !== "fresh" ? "data_stale" : comparison,
     staleReason,
   };
 }
@@ -107,30 +107,36 @@ function computeSummary(sections: BridgeSyncSection[]): BridgeStateSummary {
   const counts: BridgeStateSummary = {
     total: 0,
     synced: 0,
-    outOfSync: 0,
-    stale: 0,
-    syncing: 0,
-    unknown: 0,
+    pending: 0,
+    delayed: 0,
+    fresh: 0,
+    lagging: 0,
+    indexerUnknown: 0,
   };
 
   for (const section of sections) {
     for (const dir of section.directions) {
       counts.total++;
-      switch (dir.syncStatus) {
+      switch (dir.operationStatus) {
         case "synced":
           counts.synced++;
           break;
-        case "out_of_sync":
-          counts.outOfSync++;
+        case "pending":
+          counts.pending++;
           break;
-        case "stale":
-          counts.stale++;
+        case "delayed":
+          counts.delayed++;
           break;
-        case "syncing":
-          counts.syncing++;
+      }
+      switch (dir.indexerStatus) {
+        case "fresh":
+          counts.fresh++;
+          break;
+        case "lagging":
+          counts.lagging++;
           break;
         default:
-          counts.unknown++;
+          counts.indexerUnknown++;
       }
     }
   }
