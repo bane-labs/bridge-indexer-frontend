@@ -87,20 +87,6 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Synced" value={summary.synced} colorClass="text-emerald-500" />
           <KpiCard label="Pending" value={summary.pending} colorClass="text-blue-400" />
           <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
-          {/* Indexer status counts */}
-          {summary.lagging > 0 && (
-            <>
-              <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
-              <KpiCard
-                label="Indexer Lagging"
-                value={summary.lagging}
-                colorClass="text-amber-400"
-              />
-            </>
-          )}
-          {summary.indexerUnknown > 0 && (
-            <KpiCard label="Indexer Unknown" value={summary.indexerUnknown} />
-          )}
           {/* Health-derived operation counts */}
           {summary.pendingOperations !== undefined && summary.pendingOperations > 0 && (
             <>
