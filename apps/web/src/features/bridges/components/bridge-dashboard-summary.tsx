@@ -25,7 +25,7 @@ function Counter({ label, value, className }: CounterProps) {
 
 export function BridgeDashboardSummary({ summary }: BridgeDashboardSummaryProps) {
   return (
-    <Card className="gap-0 py-4">
+    <Card>
       <CardContent className="flex flex-wrap items-center gap-6">
         <Counter label="Total Bridges" value={summary.total} />
         <div className="bg-border h-8 w-px" aria-hidden="true" />

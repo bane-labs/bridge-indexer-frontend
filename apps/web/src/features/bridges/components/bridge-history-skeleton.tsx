@@ -18,7 +18,7 @@ export function BridgeHistorySkeleton() {
       <div className="grid gap-4 sm:grid-cols-2">
         {[0, 1].map((i) => (
           <Card key={i}>
-            <CardContent className="space-y-4 py-4">
+            <CardContent className="space-y-4">
               {/* Direction heading + status badge */}
               <div className="flex items-center justify-between">
                 <Skeleton className="h-4 w-32" />

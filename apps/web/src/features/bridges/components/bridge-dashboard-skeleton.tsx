@@ -33,7 +33,7 @@ export function BridgeDashboardSkeleton() {
   return (
     <div className="space-y-8">
       {/* Summary skeleton */}
-      <Card className="gap-0 py-4">
+      <Card>
         <CardContent className="flex flex-wrap items-center gap-6">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-1">

@@ -102,7 +102,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
 
   return (
     <Card className="gap-0">
-      <CardContent className="space-y-4 py-4">
+      <CardContent className="space-y-4">
         {/* Direction heading + status */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-foreground text-sm font-semibold">{directionLabel}</span>
