@@ -87,20 +87,6 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Synced" value={summary.synced} colorClass="text-emerald-500" />
           <KpiCard label="Pending" value={summary.pending} colorClass="text-blue-400" />
           <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
-          {/* Health-derived operation counts */}
-          {summary.pendingOperations !== undefined && summary.pendingOperations > 0 && (
-            <>
-              <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
-              <KpiCard
-                label="Pending Ops"
-                value={summary.pendingOperations}
-                colorClass="text-blue-400"
-              />
-            </>
-          )}
-          {summary.stuckOperations !== undefined && summary.stuckOperations > 0 && (
-            <KpiCard label="Stuck Ops" value={summary.stuckOperations} colorClass="text-red-400" />
-          )}
         </div>
         <div className="flex items-center gap-3">
           {summary.healthStatus && <HealthStatusIndicator status={summary.healthStatus} />}

@@ -22,8 +22,6 @@ export async function getBridgeDashboard(): Promise<BridgeDashboardData> {
 
   const healthSummary = extractHealthSummary(health);
   dashboard.summary.healthStatus = healthSummary.healthStatus;
-  dashboard.summary.pendingOperations = healthSummary.pendingOperations;
-  dashboard.summary.stuckOperations = healthSummary.stuckOperations;
 
   return dashboard;
 }

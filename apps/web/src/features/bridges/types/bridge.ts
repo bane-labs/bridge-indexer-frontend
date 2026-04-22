@@ -76,10 +76,6 @@ export interface BridgeDashboardSummary {
   lastRefreshedAt: string;
   /** Overall health status from backend. */
   healthStatus?: "healthy" | "degraded" | "unhealthy";
-  /** Total pending operations across all bridge types. */
-  pendingOperations?: number;
-  /** Total stuck operations across all bridge types. */
-  stuckOperations?: number;
 }
 
 /** Complete dashboard data response. */

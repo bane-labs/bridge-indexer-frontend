@@ -72,7 +72,9 @@ function mapInstance(
     new Date(sourceUpdatedAt) > new Date(destUpdatedAt) ? sourceUpdatedAt : destUpdatedAt;
 
   const tokenSymbol =
-    sync.bridge_type === "token" ? resolveTokenSymbol(sync.src_token ?? undefined) : undefined;
+    sync.bridge_type === "token"
+      ? (sync.src_token_symbol ?? resolveTokenSymbol(sync.src_token ?? undefined))
+      : undefined;
 
   const operationStatus = mapOperationStatus(sync.status, sync.delta_nonce ?? undefined);
   const indexerStatus = mapIndexerStatus(sourceIndexer);
@@ -115,18 +117,8 @@ export function mapSyncInstancesToStatuses(
  * Compute aggregate health counts from backend health response.
  */
 export function extractHealthSummary(health: BackendOverallHealth) {
-  let pendingOperations = 0;
-  let stuckOperations = 0;
-
-  for (const bridge of health.bridges) {
-    pendingOperations += bridge.pending_operations;
-    stuckOperations += bridge.stuck_operations;
-  }
-
   return {
     healthStatus: health.status,
-    pendingOperations,
-    stuckOperations,
     updatedAt: health.updated_at,
   };
 }

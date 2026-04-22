@@ -31,8 +31,6 @@ export function useBridgeDashboard() {
 
       const healthSummary = extractHealthSummary(health);
       dashboard.summary.healthStatus = healthSummary.healthStatus;
-      dashboard.summary.pendingOperations = healthSummary.pendingOperations;
-      dashboard.summary.stuckOperations = healthSummary.stuckOperations;
 
       return dashboard;
     },

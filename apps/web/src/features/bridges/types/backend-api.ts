@@ -63,6 +63,9 @@ export interface BackendDirectionalInstanceSync {
   dst_chain: string;
   src_token?: string;
   dst_token?: string;
+  /** Present for token bridge instances when the server can resolve symbol() via RPC. */
+  src_token_symbol?: string;
+  dst_token_symbol?: string;
   status: BackendDirectionalSyncStatus;
   delta_nonce?: number;
   src_nonce?: number;
@@ -86,8 +89,6 @@ export interface BackendBridgeHealth {
   avg_completion_24h_seconds?: number;
   avg_completion_7d_seconds?: number;
   uptime_percentage?: number;
-  pending_operations: number;
-  stuck_operations: number;
 }
 
 export interface BackendOverallHealth {
