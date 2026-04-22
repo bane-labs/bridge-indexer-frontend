@@ -10,6 +10,11 @@ export interface BridgeOperationHistoryRow {
   settledAt?: string;
   /** Operation status: pending, completed, or stuck. */
   status: "pending" | "completed" | "stuck";
+  /**
+   * Settlement status shown in the UI for relayed (pending) operations.
+   * "claimable" for native/token bridge; "waiting for execution" for message bridge.
+   */
+  settlementStatus?: "claimable" | "waiting for execution";
   /** Transfer amount (string for big number safety). */
   amount?: string;
   /** Sender address on source chain. */

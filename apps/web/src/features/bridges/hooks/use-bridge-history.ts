@@ -34,6 +34,12 @@ function buildRows(
       destinationTxHash: op.dest_tx_hash,
       settledAt: op.completion_timestamp,
       status: op.status,
+      settlementStatus:
+        op.status === "pending"
+          ? op.bridge_type === "message"
+            ? ("waiting for execution" as const)
+            : ("claimable" as const)
+          : undefined,
       amount: op.amount,
       fromAddress: op.from_address,
       toAddress: op.to_address,

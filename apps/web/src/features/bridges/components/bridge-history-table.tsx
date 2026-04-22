@@ -20,7 +20,7 @@ const STATUS_CONFIG: Record<
   { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
 > = {
   completed: { label: "Completed", variant: "success" },
-  pending: { label: "Pending", variant: "warning" },
+  pending: { label: "Relayed", variant: "secondary" },
   stuck: { label: "Stuck", variant: "destructive" },
 };
 
@@ -44,6 +44,7 @@ export function BridgeHistoryTable({
           <TableRow>
             <TableHead className="w-20">Nonce</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Settlement</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Root</TableHead>
             <TableHead>Source Tx</TableHead>
@@ -65,6 +66,15 @@ export function BridgeHistoryTable({
                   <Badge variant={statusConfig.variant} size="sm">
                     {statusConfig.label}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {row.settlementStatus ? (
+                    <span className="text-muted-foreground text-sm capitalize">
+                      {row.settlementStatus}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="font-mono text-sm tabular-nums">
                   {row.amount ?? "—"}
