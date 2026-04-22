@@ -3,8 +3,6 @@ import "@atlas/ui/globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 
-import { Toaster } from "@atlas/ui";
-
 import { GlobalErrorHandler } from "@/components/SentryErrorBoundary";
 import { MainProvider } from "@/providers";
 
@@ -84,7 +82,6 @@ export default async function RootLayout({
               </p>
             </footer>
           </div>
-          <Toaster />
         </MainProvider>
       </body>
     </html>

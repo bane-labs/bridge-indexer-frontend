@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 
+import { notify } from "@/lib/notifications";
+
 import { copyToClipboard } from "../lib/bridge-comparison";
 import {
   formatBlockNumber,
@@ -26,6 +28,7 @@ export function BridgeSideStatePanel({ label, state }: BridgeSideStatePanelProps
     const ok = await copyToClipboard(state.root);
     if (ok) {
       setCopied(true);
+      notify.success("Copied to clipboard", { duration: 2000 });
       setTimeout(() => setCopied(false), 2000);
     }
   }, [state.root]);
