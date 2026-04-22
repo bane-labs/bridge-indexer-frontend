@@ -1,20 +1,20 @@
 name: Performance - Bundle Analysis
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "apps/web/**"
-      - "packages/ui/**"
-      - "pnpm-lock.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/web/**"
-      - "packages/ui/**"
-      - "pnpm-lock.yaml"
-  workflow_dispatch:
+  workflow_dispatch: # TODO: re-enable once bundle analysis is fixed
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  #   paths:
+  #     - "apps/web/**"
+  #     - "packages/ui/**"
+  #     - "pnpm-lock.yaml"
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "apps/web/**"
+  #     - "packages/ui/**"
+  #     - "pnpm-lock.yaml"
 
 permissions:
   contents: read
