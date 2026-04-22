@@ -86,11 +86,6 @@ export async function serverApiRequest<T>(
   const baseUrl = await getApiBaseUrl();
   const url = await buildServerApiUrl(endpoint, baseUrl);
 
-  if (process.env.NODE_ENV !== "test") {
-    // Temporary debug log to verify deployed API target resolution.
-    console.info("[bridge-debug] serverApiRequest", { endpoint, baseUrl, url });
-  }
-
   // Build headers
   const headers = new Headers(fetchOptions.headers);
 

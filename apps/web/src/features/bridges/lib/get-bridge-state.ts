@@ -1,6 +1,5 @@
-import { getBridgeDashboard } from "./get-bridge-dashboard";
-
 import { deriveComparisonSummary, deriveStaleReason } from "./bridge-comparison";
+import { getBridgeDashboard } from "./get-bridge-dashboard";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
 import type {

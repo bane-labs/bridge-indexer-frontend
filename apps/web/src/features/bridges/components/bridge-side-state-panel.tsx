@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 
+import { copyToClipboard } from "../lib/bridge-comparison";
 import {
   formatBlockNumber,
   formatNonce,
@@ -9,7 +10,6 @@ import {
   relativeTime,
   shortenHash,
 } from "../lib/formatters";
-import { copyToClipboard } from "../lib/bridge-comparison";
 
 import type { BridgeSideState, ChainId } from "../types/bridge";
 

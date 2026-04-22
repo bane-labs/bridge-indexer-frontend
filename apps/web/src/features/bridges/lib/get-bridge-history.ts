@@ -1,9 +1,9 @@
-import { parseBridgeSlug } from "./bridge-slugs";
-import { fetchAllBridgeOperations } from "./bridge-operations-api";
 import { resolveTokenSymbol } from "./bridge-operation-utils";
+import { fetchAllBridgeOperations } from "./bridge-operations-api";
+import { parseBridgeSlug } from "./bridge-slugs";
 
-import type { BridgeHistoryPageData } from "../types/bridge-history";
 import type { ChainId } from "../types/bridge";
+import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
@@ -72,11 +72,14 @@ export async function getBridgeHistory(slug: string): Promise<BridgeHistoryPageD
   const depositRows = buildRows(filtered, "deposit");
   const withdrawalRows = buildRows(filtered, "withdrawal");
 
-  const label = parsed.tokenSymbol
-    ? `${parsed.tokenSymbol} Token Bridge`
-    : parsed.bridgeFamily === "native"
-      ? "Native Bridge"
-      : "Message Bridge";
+  let label: string;
+  if (parsed.tokenSymbol) {
+    label = `${parsed.tokenSymbol} Token Bridge`;
+  } else if (parsed.bridgeFamily === "native") {
+    label = "Native Bridge";
+  } else {
+    label = "Message Bridge";
+  }
 
   return {
     slug,

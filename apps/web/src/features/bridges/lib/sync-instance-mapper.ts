@@ -10,18 +10,18 @@
 import { resolveTokenSymbol } from "./bridge-operation-utils";
 
 import type {
-  ChainId,
-  DirectionalBridgeStatus,
-  IndexerStatus,
-  OperationStatus,
-} from "../types/bridge";
-import type {
   BackendDirectionalInstanceSync,
   BackendDirectionalSyncStatus,
   BackendIndexerState,
   BackendIndexerStateResponse,
   BackendOverallHealth,
 } from "../types/backend-api";
+import type {
+  ChainId,
+  DirectionalBridgeStatus,
+  IndexerStatus,
+  OperationStatus,
+} from "../types/bridge";
 
 const EMPTY_ROOT = "0x0";
 

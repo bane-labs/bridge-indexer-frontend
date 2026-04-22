@@ -1,11 +1,11 @@
 "use client";
 
+import { useBridgeDashboard } from "../hooks/use-bridge-dashboard";
+
 import { BridgeDashboardEmpty } from "./bridge-dashboard-empty";
 import { BridgeDashboardError } from "./bridge-dashboard-error";
 import { OperatorDashboard } from "./operator-dashboard";
 import { OperatorDashboardSkeleton } from "./operator-dashboard-skeleton";
-
-import { useBridgeDashboard } from "../hooks/use-bridge-dashboard";
 
 export function BridgeDashboardClient() {
   const { data, isLoading, isError } = useBridgeDashboard();

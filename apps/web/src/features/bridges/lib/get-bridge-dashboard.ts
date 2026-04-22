@@ -1,6 +1,6 @@
 import { fetchHealth, fetchIndexerState, fetchSyncInstances } from "./bridge-operations-api";
-import { extractHealthSummary, mapSyncInstancesToStatuses } from "./sync-instance-mapper";
 import { buildDashboardData } from "./bridge-status";
+import { extractHealthSummary, mapSyncInstancesToStatuses } from "./sync-instance-mapper";
 
 import type { BridgeDashboardData } from "../types/bridge";
 

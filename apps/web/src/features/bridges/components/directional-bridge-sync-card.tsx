@@ -5,10 +5,11 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui";
 
 import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
+
 import { BridgeSideStatePanel } from "./bridge-side-state-panel";
 import { ComparisonSummaryBadge } from "./comparison-summary";
-import { IndexerStatusBadge, OperationStatusBadge } from "./sync-status-badge";
 import { StaleIndicator } from "./stale-indicator";
+import { IndexerStatusBadge, OperationStatusBadge } from "./sync-status-badge";
 
 import type { DirectionalBridgeSyncState } from "../types/bridge-state";
 

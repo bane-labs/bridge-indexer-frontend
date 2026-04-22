@@ -30,8 +30,12 @@ export function buildBridgeContext(
   destinationLabel: string,
   tokenSymbol?: string
 ): string {
-  const familyLabel =
-    bridgeFamily === "token" ? "Token" : bridgeFamily === "native" ? "Native" : "Message";
+  const familyLabelMap: Record<BridgeFamily, string> = {
+    token: "Token",
+    native: "Native",
+    message: "Message",
+  };
+  const familyLabel = familyLabelMap[bridgeFamily];
   const chains = `${sourceLabel} ↔ ${destinationLabel}`;
 
   if (tokenSymbol) return `${familyLabel} | ${chains} | ${tokenSymbol}`;

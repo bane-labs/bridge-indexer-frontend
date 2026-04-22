@@ -32,12 +32,12 @@ export function BridgeHistoryHeader({
   const destLabel = getChainLabel(primaryDestChain);
   const context = buildBridgeContext(bridgeFamily, sourceLabel, destLabel, tokenSymbol);
 
-  const familyColor =
-    bridgeFamily === "native"
-      ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
-      : bridgeFamily === "message"
-        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-        : "bg-teal-500/10 text-teal-700 dark:text-teal-400";
+  const familyColorMap: Record<BridgeFamily, string> = {
+    native: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    message: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    token: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+  };
+  const familyColor = familyColorMap[bridgeFamily];
 
   return (
     <header className="mb-8">

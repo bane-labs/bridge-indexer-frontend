@@ -1,8 +1,8 @@
 import { resolveTokenSymbol } from "./bridge-operation-utils";
 import { deriveIndexerStatus, deriveOperationStatus } from "./bridge-status";
 
-import type { DirectionalBridgeStatus } from "../types/bridge";
 import type { BackendBridgeOperation, BackendOperationStatus } from "../types/backend-api";
+import type { DirectionalBridgeStatus } from "../types/bridge";
 
 interface OperationGroup {
   bridgeFamily: DirectionalBridgeStatus["bridgeFamily"];
