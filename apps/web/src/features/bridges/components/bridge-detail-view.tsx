@@ -95,6 +95,8 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
 // ─── Compact sync summary card per direction ──────────────
 function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
   const directionLabel = getDirectionLabel(status.sourceChain, status.destinationChain);
+  const srcLabel = getChainLabel(status.sourceChain);
+  const dstLabel = getChainLabel(status.destinationChain);
   const lag = status.source.nonce - status.destination.nonce;
   const rootMatch = status.source.root === status.destination.root;
 
@@ -107,69 +109,94 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
           <SyncStatusBadge status={status.operationStatus} />
         </div>
 
-        {/* Compact comparison grid */}
-        <dl className="grid grid-cols-[1fr_auto_1fr] gap-x-3 gap-y-2 text-sm">
-          {/* Header labels */}
-          <dt className="text-muted-foreground text-xs font-medium">Source</dt>
-          <dt />
-          <dt className="text-muted-foreground text-right text-xs font-medium">Destination</dt>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Compares on-chain bridge state between {srcLabel} (source) and {dstLabel} (destination).
+          Both the operation count and the state root must match for the bridge to be fully synced.
+        </p>
 
-          {/* Nonce row */}
-          <dd className="font-mono tabular-nums">{formatNonce(status.source.nonce)}</dd>
-          <dd className="text-muted-foreground text-center text-xs">Nonce</dd>
-          <dd className="text-right font-mono tabular-nums">
-            {formatNonce(status.destination.nonce)}
-          </dd>
+        {/* Comparison table */}
+        <div className="border-border overflow-hidden rounded-md border text-sm">
+          {/* Column headers */}
+          <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] border-b px-3 py-2 text-xs font-semibold">
+            <span className="text-foreground">{srcLabel}</span>
+            <span className="text-muted-foreground w-28 text-center">vs</span>
+            <span className="text-foreground text-right">{dstLabel}</span>
+          </div>
 
-          {/* Nonce lag */}
-          <dd />
-          <dd className="text-center">
-            <NonceLag lag={lag} syncStatus={status.operationStatus} />
-          </dd>
-          <dd />
+          {/* Operations (nonce) row */}
+          <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-3">
+            <div>
+              <div className="font-mono text-base font-semibold tabular-nums">
+                {formatNonce(status.source.nonce)}
+              </div>
+              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+            </div>
+            <div className="flex w-28 flex-col items-center gap-1">
+              <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                Nonce
+              </span>
+              <NonceLag lag={lag} syncStatus={status.operationStatus} />
+            </div>
+            <div className="text-right">
+              <div className="font-mono text-base font-semibold tabular-nums">
+                {formatNonce(status.destination.nonce)}
+              </div>
+              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+            </div>
+          </div>
 
-          {/* Root row */}
-          <dd className="font-mono text-xs tabular-nums" title={status.source.root}>
-            {shortenHash(status.source.root, 8, 4)}
-          </dd>
-          <dd className="text-center text-xs">Root</dd>
-          <dd className="text-right font-mono text-xs tabular-nums" title={status.destination.root}>
-            {shortenHash(status.destination.root, 8, 4)}
-          </dd>
+          {/* State root row */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 py-3">
+            <div
+              className="text-foreground/80 font-mono text-xs tabular-nums"
+              title={status.source.root}
+            >
+              {shortenHash(status.source.root, 8, 4)}
+            </div>
+            <div className="flex w-28 flex-col items-center gap-1">
+              <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                State Root
+              </span>
+              <RootMatchBadge match={rootMatch} />
+            </div>
+            <div
+              className="text-foreground/80 text-right font-mono text-xs tabular-nums"
+              title={status.destination.root}
+            >
+              {shortenHash(status.destination.root, 8, 4)}
+            </div>
+          </div>
+        </div>
 
-          {/* Root match */}
-          <dd />
-          <dd className="text-center">
-            <RootMatchBadge match={rootMatch} />
-          </dd>
-          <dd />
-
-          {/* Block row */}
-          {status.source.blockNumber !== undefined &&
-            status.destination.blockNumber !== undefined && (
-              <>
-                <dd className="font-mono text-xs tabular-nums">
+        {/* Block heights + last indexed timestamps */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="text-muted-foreground space-y-0.5">
+            {status.source.blockNumber !== undefined && (
+              <div>
+                Block{" "}
+                <span className="text-foreground/70 font-mono">
                   {formatBlockNumber(status.source.blockNumber)}
-                </dd>
-                <dd className="text-muted-foreground text-center text-xs">Block</dd>
-                <dd className="text-right font-mono text-xs tabular-nums">
-                  {formatBlockNumber(status.destination.blockNumber)}
-                </dd>
-              </>
+                </span>
+              </div>
             )}
-
-          {/* Updated row */}
-          <dd className="text-muted-foreground text-xs" title={status.source.updatedAt}>
-            {relativeTime(status.source.updatedAt)}
-          </dd>
-          <dd className="text-muted-foreground text-center text-xs">Updated</dd>
-          <dd
-            className="text-muted-foreground text-right text-xs"
-            title={status.destination.updatedAt}
-          >
-            {relativeTime(status.destination.updatedAt)}
-          </dd>
-        </dl>
+            <div title={status.source.updatedAt}>
+              Indexed {relativeTime(status.source.updatedAt)}
+            </div>
+          </div>
+          <div className="text-muted-foreground space-y-0.5 text-right">
+            {status.destination.blockNumber !== undefined && (
+              <div>
+                Block{" "}
+                <span className="text-foreground/70 font-mono">
+                  {formatBlockNumber(status.destination.blockNumber)}
+                </span>
+              </div>
+            )}
+            <div title={status.destination.updatedAt}>
+              Indexed {relativeTime(status.destination.updatedAt)}
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -179,8 +206,8 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
   const absLag = Math.abs(lag);
   if (absLag === 0) {
     return (
-      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
-        ±0
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+        ✓ In sync
       </span>
     );
   }
@@ -192,19 +219,19 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}
     >
-      lag: {absLag}
+      {absLag} behind
     </span>
   );
 }
 
 function RootMatchBadge({ match }: { match: boolean }) {
   return match ? (
-    <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
-      ✓ Match
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+      ✓ Roots match
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
-      ✕ Mismatch
+    <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+      ✕ Roots differ
     </span>
   );
 }
