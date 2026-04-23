@@ -36,7 +36,7 @@ import type {
 // Extend window to include gtag
 declare global {
   interface Window {
-    dataLayer: unknown[];
+    dataLayer?: Object[];
     gtag: (...args: unknown[]) => void;
   }
 }
@@ -82,7 +82,7 @@ class GAAdapter implements Analytics {
     // Create gtag function if not present
     if (typeof window.gtag !== "function") {
       window.gtag = function gtag(...args: unknown[]) {
-        window.dataLayer.push(args);
+        window.dataLayer?.push(args);
       };
     }
 
