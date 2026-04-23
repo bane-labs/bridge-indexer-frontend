@@ -1,9 +1,11 @@
 import "@atlas/ui/globals.css";
 
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 
 import { GlobalErrorHandler } from "@/components/SentryErrorBoundary";
+import { clientEnv } from "@/env";
 import { MainProvider } from "@/providers";
 
 import type { Metadata } from "next";
@@ -35,6 +37,9 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        {clientEnv.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={clientEnv.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
         <MainProvider>
           <GlobalErrorHandler />
           <div className="flex min-h-screen flex-col">
