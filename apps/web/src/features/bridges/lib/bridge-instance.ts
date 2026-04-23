@@ -63,7 +63,7 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
         ? ("data_stale" as ComparisonSummary)
         : deriveComparisonSummary(d.source, d.destination);
 
-    const assetLabel = d.tokenSymbol ?? (d.bridgeFamily === "native" ? "Native" : "Message");
+    const assetLabel = d.tokenSymbol ?? (d.bridgeFamily === "native" ? "Native (GAS)" : "Message");
     const FAMILY_TYPE_LABELS: Record<BridgeFamily, string> = {
       token: "Token",
       native: "Native",

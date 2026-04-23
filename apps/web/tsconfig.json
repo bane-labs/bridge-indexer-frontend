@@ -11,7 +11,8 @@
       "@/lib/*": ["./src/lib/*", "../../packages/ui/src/lib/*"],
       "@/hooks/*": ["./src/hooks/*"]
     },
-    "noEmit": true
+    "noEmit": true,
+    "allowArbitraryExtensions": true
   },
   "include": [
     "next-env.d.ts",

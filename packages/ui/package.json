@@ -7,9 +7,15 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./globals.css": "./src/styles/globals.css",
+    "./globals.css": {
+      "types": "./src/styles/globals.css.d.ts",
+      "default": "./src/styles/globals.css"
+    },
     "./postcss.config": "./postcss.config.mjs",
-    "./styles": "./src/styles/globals.css"
+    "./styles": {
+      "types": "./src/styles/globals.css.d.ts",
+      "default": "./src/styles/globals.css"
+    }
   },
   "scripts": {
     "lint": "eslint .",

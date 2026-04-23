@@ -79,7 +79,7 @@ function KpiCard({
 function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
   return (
     <Card className="border-border/60 bg-card/50 backdrop-blur">
-      <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
+      <CardContent className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-1">
           {/* Operation status counts */}
           <KpiCard label="Total" value={summary.total} />
