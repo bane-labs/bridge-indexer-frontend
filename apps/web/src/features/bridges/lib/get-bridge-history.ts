@@ -1,6 +1,6 @@
-import { resolveTokenSymbol } from "./bridge-operation-utils";
-import { fetchAllBridgeOperations } from "./bridge-operations-api";
+import { fetchAllBridgeOperations, fetchSyncInstances } from "./bridge-operations-api";
 import { parseBridgeSlug } from "./bridge-slugs";
+import { collectTokenContractsForSymbol, operationMatchesTokenSlug } from "./bridge-token-matching";
 
 import type { ChainId } from "../types/bridge";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
@@ -47,19 +47,26 @@ export async function getBridgeHistory(slug: string): Promise<BridgeHistoryPageD
     return null;
   }
 
-  const operations = await fetchAllBridgeOperations(parsed.bridgeFamily);
+  const [operations, syncInstances] = await Promise.all([
+    fetchAllBridgeOperations(parsed.bridgeFamily),
+    fetchSyncInstances(),
+  ]);
+
+  const contractsForTokenSymbol =
+    parsed.bridgeFamily === "token" && parsed.tokenSymbol
+      ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
+      : new Set<string>();
 
   const filtered = operations.filter((op) => {
     if (parsed.bridgeFamily !== op.bridge_type) {
       return false;
     }
 
-    if (parsed.bridgeFamily !== "token") {
+    if (parsed.bridgeFamily !== "token" || !parsed.tokenSymbol) {
       return true;
     }
 
-    const tokenSymbol = resolveTokenSymbol(op.token_contract);
-    return tokenSymbol?.toLowerCase() === parsed.tokenSymbol?.toLowerCase();
+    return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
   });
 
   if (!filtered.length) {

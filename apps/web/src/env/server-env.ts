@@ -60,6 +60,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     LOG_LEVEL: process.env.LOG_LEVEL,
     API_BASE_URL: process.env.API_BASE_URL,
+    INDEXER_API_UPSTREAM: process.env.INDEXER_API_UPSTREAM,
     DATABASE_URL: process.env.DATABASE_URL,
     SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,

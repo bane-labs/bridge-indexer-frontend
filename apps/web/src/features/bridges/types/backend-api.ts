@@ -28,6 +28,8 @@ export interface BackendBridgeOperation {
   dest_tx_hash?: string;
   token_contract?: string;
   dest_token_contract?: string;
+  /** When present, on-chain token ticker as returned by the indexer. */
+  token_symbol?: string;
   root?: string;
   amount?: string;
   from_address: string;

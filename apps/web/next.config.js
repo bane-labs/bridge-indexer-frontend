@@ -71,6 +71,28 @@ const nextConfig = {
       },
     ];
   },
+
+  /**
+   * Proxy bridge indexer API through the Next origin so the browser does not call
+   * the upstream host directly. That avoids CORS entirely (including OPTIONS
+   * preflight for custom headers like x-request-id on GET requests).
+   *
+   * Set INDEXER_API_UPSTREAM to the indexer root (no trailing slash), and
+   * NEXT_PUBLIC_API_URL=/api/indexer so client requests stay same-origin.
+   */
+  async rewrites() {
+    const upstream = process.env.INDEXER_API_UPSTREAM;
+    if (!upstream || !/^https?:\/\//.test(upstream)) {
+      return [];
+    }
+    const base = upstream.replace(/\/$/, "");
+    return [
+      {
+        source: "/api/indexer/:path*",
+        destination: `${base}/:path*`,
+      },
+    ];
+  },
 };
 
 // Apply bundle analyzer first
