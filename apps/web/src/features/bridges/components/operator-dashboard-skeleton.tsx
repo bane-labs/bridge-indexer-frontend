@@ -47,7 +47,7 @@ export function OperatorDashboardSkeleton() {
 
       {/* Table skeleton */}
       <div className="overflow-hidden rounded-lg border">
-        {/* Table header: Status, Direction, Asset, Type, Src Nonce, Dst Nonce, Lag, Updated, (link) */}
+        {/* Table header: Status, Direction, Asset, Type, Src Nonce, Dst Nonce, Lag, Updated */}
         <div className="bg-muted/40 px-4 py-3">
           <div className="flex gap-8">
             <Skeleton className="h-4 w-10" />
@@ -58,7 +58,6 @@ export function OperatorDashboardSkeleton() {
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-8" />
             <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-12" />
           </div>
         </div>
         {Array.from({ length: 8 }).map((_, i) => (
@@ -72,7 +71,6 @@ export function OperatorDashboardSkeleton() {
               <Skeleton className="h-4 w-14" />
               <Skeleton className="h-4 w-6" />
               <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-12" />
             </div>
           </div>
         ))}

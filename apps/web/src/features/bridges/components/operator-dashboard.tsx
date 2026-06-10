@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import {
@@ -314,6 +315,8 @@ function getRowHighlight(operationStatus: string, indexerStatus: string): string
 
 // ─── Main bridge status table ─────────────────────────────
 function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
+  const router = useRouter();
+
   if (rows.length === 0) {
     return (
       <Card>
@@ -337,50 +340,55 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
             <TableHead className="text-right">Dst Nonce</TableHead>
             <TableHead className="text-right">Lag</TableHead>
             <TableHead className="text-right">Updated</TableHead>
-            <TableHead className="w-20 text-right" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className={`hover:bg-muted/30 transition-colors ${getRowHighlight(row.operationStatus, row.indexerStatus)}`}
-            >
-              <TableCell>
-                <OperationStatusBadge status={row.operationStatus} />
-              </TableCell>
-              <TableCell className="text-foreground text-sm font-medium whitespace-nowrap">
-                {row.directionLabel}
-              </TableCell>
-              <TableCell className="text-foreground text-sm">{row.assetLabel}</TableCell>
-              <TableCell>
-                <TypeBadge type={row.bridgeTypeLabel} />
-              </TableCell>
-              <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.sourceNonce.toLocaleString("en-US")}
-              </TableCell>
-              <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.destinationNonce.toLocaleString("en-US")}
-              </TableCell>
-              <TableCell className="text-right">
-                <LagCell lag={row.lag} status={row.operationStatus} />
-              </TableCell>
-              <TableCell
-                className="text-muted-foreground text-right text-xs whitespace-nowrap"
-                title={row.lastUpdatedAt}
+          {rows.map((row) => {
+            const href = `/bridges/${row.slug}`;
+
+            return (
+              <TableRow
+                key={row.id}
+                className={`hover:bg-muted/30 cursor-pointer transition-colors ${getRowHighlight(row.operationStatus, row.indexerStatus)}`}
+                onClick={() => router.push(href)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(href);
+                  }
+                }}
+                tabIndex={0}
+                role="link"
+                aria-label={`View ${row.directionLabel} ${row.assetLabel} bridge details`}
               >
-                {relativeTime(row.lastUpdatedAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                <Link
-                  href={`/bridges/${row.slug}`}
-                  className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+                <TableCell>
+                  <OperationStatusBadge status={row.operationStatus} />
+                </TableCell>
+                <TableCell className="text-foreground text-sm font-medium whitespace-nowrap">
+                  {row.directionLabel}
+                </TableCell>
+                <TableCell className="text-foreground text-sm">{row.assetLabel}</TableCell>
+                <TableCell>
+                  <TypeBadge type={row.bridgeTypeLabel} />
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {row.sourceNonce.toLocaleString("en-US")}
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {row.destinationNonce.toLocaleString("en-US")}
+                </TableCell>
+                <TableCell className="text-right">
+                  <LagCell lag={row.lag} status={row.operationStatus} />
+                </TableCell>
+                <TableCell
+                  className="text-muted-foreground text-right text-xs whitespace-nowrap"
+                  title={row.lastUpdatedAt}
                 >
-                  Details →
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
+                  {relativeTime(row.lastUpdatedAt)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
