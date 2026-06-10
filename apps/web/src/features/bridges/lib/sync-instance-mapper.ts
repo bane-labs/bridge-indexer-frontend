@@ -7,7 +7,7 @@
  * on-chain bridge contract state.
  */
 
-import { resolveTokenSymbol } from "./bridge-operation-utils";
+import { resolvedSyncInstanceTokenSymbol } from "./bridge-token-matching";
 
 import type {
   BackendDirectionalInstanceSync,
@@ -71,10 +71,7 @@ function mapInstance(
   const lastUpdatedAt =
     new Date(sourceUpdatedAt) > new Date(destUpdatedAt) ? sourceUpdatedAt : destUpdatedAt;
 
-  const tokenSymbol =
-    sync.bridge_type === "token"
-      ? (sync.src_token_symbol ?? resolveTokenSymbol(sync.src_token ?? undefined))
-      : undefined;
+  const tokenSymbol = resolvedSyncInstanceTokenSymbol(sync);
 
   const operationStatus = mapOperationStatus(sync.status, sync.delta_nonce ?? undefined);
   const indexerStatus = mapIndexerStatus(sourceIndexer);

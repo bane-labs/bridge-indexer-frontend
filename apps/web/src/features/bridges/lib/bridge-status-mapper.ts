@@ -27,7 +27,7 @@ function groupOperationsByDirection(operations: BackendBridgeOperation[]): Opera
 
   for (const op of operations) {
     const tokenSymbol =
-      op.bridge_type === "token" ? resolveTokenSymbol(op.token_contract) : undefined;
+      op.bridge_type === "token" ? resolveTokenSymbol(op.dest_token_contract) : undefined;
     const key = [op.bridge_type, tokenSymbol ?? "", op.source_chain, op.destination_chain].join(
       "|"
     );

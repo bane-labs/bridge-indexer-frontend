@@ -12,7 +12,7 @@ export function normalizeTokenContractAddress(addr?: string): string | null {
 }
 
 /**
- * Resolve the display token ticker for a sync instance (aligned with sync-instance-mapper).
+ * Resolve the display token ticker for a sync instance (destination-side symbol).
  */
 export function resolvedSyncInstanceTokenSymbol(
   sync: BackendDirectionalInstanceSync
@@ -21,10 +21,10 @@ export function resolvedSyncInstanceTokenSymbol(
     return undefined;
   }
   return (
-    sync.src_token_symbol ??
     sync.dst_token_symbol ??
-    resolveTokenSymbol(sync.src_token ?? undefined) ??
-    resolveTokenSymbol(sync.dst_token ?? undefined)
+    sync.src_token_symbol ??
+    resolveTokenSymbol(sync.dst_token ?? undefined) ??
+    resolveTokenSymbol(sync.src_token ?? undefined)
   );
 }
 
@@ -84,6 +84,7 @@ export function operationMatchesTokenSlug(
     );
   }
 
-  const resolved = resolveTokenSymbol(op.token_contract);
+  const resolved =
+    resolveTokenSymbol(op.dest_token_contract) ?? resolveTokenSymbol(op.token_contract);
   return resolved?.toLowerCase() === sym;
 }
