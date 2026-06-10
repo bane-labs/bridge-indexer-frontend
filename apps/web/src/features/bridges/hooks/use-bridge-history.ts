@@ -4,9 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApiClient } from "@/lib/api/hooks";
 
-import { fetchAllBridgeOperationsViaClient } from "../lib/backend-bridge-operations";
-import { resolveTokenSymbol } from "../lib/bridge-operation-utils";
+import {
+  fetchAllBridgeOperationsViaClient,
+  fetchSyncInstancesViaClient,
+} from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
+import {
+  collectTokenContractsForSymbol,
+  operationMatchesTokenSlug,
+} from "../lib/bridge-token-matching";
 import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
 
 import type { BackendBridgeOperation } from "../types/backend-api";
@@ -48,7 +54,8 @@ function buildRows(
 
 function mapOperationsToHistory(
   slug: string,
-  operations: BackendBridgeOperation[]
+  operations: BackendBridgeOperation[],
+  contractsForTokenSymbol: Set<string>
 ): BridgeHistoryPageData | null {
   const parsed = parseBridgeSlug(slug);
   if (!parsed) {
@@ -60,12 +67,11 @@ function mapOperationsToHistory(
       return false;
     }
 
-    if (parsed.bridgeFamily !== "token") {
+    if (parsed.bridgeFamily !== "token" || !parsed.tokenSymbol) {
       return true;
     }
 
-    const tokenSymbol = resolveTokenSymbol(op.token_contract);
-    return tokenSymbol?.toLowerCase() === parsed.tokenSymbol?.toLowerCase();
+    return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
   });
 
   if (!filtered.length) {
@@ -103,20 +109,27 @@ export function useBridgeHistory(slug: string) {
         return null;
       }
 
-      const operations = await fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily);
+      const [operations, syncInstances] = await Promise.all([
+        fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
+        fetchSyncInstancesViaClient(api),
+      ]);
 
-      const history = mapOperationsToHistory(slug, operations);
+      const contractsForTokenSymbol =
+        parsed.bridgeFamily === "token" && parsed.tokenSymbol
+          ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
+          : new Set<string>();
+
+      const history = mapOperationsToHistory(slug, operations, contractsForTokenSymbol);
       if (!history) {
         return null;
       }
 
       const statuses = mapOperationsToDirectionalStatuses(
         operations.filter((op) => {
-          if (history.bridgeFamily !== "token") {
+          if (history.bridgeFamily !== "token" || !history.tokenSymbol) {
             return true;
           }
-          const tokenSymbol = resolveTokenSymbol(op.token_contract);
-          return tokenSymbol?.toLowerCase() === history.tokenSymbol?.toLowerCase();
+          return operationMatchesTokenSlug(op, history.tokenSymbol, contractsForTokenSymbol);
         })
       );
 

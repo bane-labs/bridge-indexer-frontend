@@ -41,6 +41,15 @@ export const ServerEnvSchema = {
   API_BASE_URL: z.string().url().optional(),
 
   /**
+   * Bridge indexer API root URL (server-only). When set, `next.config.js` rewrites
+   * `/api/indexer/*` to this host so the browser can use `NEXT_PUBLIC_API_URL=/api/indexer`
+   * and avoid CORS/preflight issues with the upstream API.
+   *
+   * @example 'https://banelabs-bridge-indexer-backend.app.mf.axlabs.net'
+   */
+  INDEXER_API_UPSTREAM: z.string().url().optional(),
+
+  /**
    * Database connection URL.
    * Used to connect to your database (PostgreSQL, MySQL, etc.)
    *
