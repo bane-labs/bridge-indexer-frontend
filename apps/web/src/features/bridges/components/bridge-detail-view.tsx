@@ -72,7 +72,7 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
 
       {/* B. Sync summary cards for each direction */}
       {statuses.length > 0 && (
-        <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <div className="mb-8 grid gap-4">
           {statuses.map((s) => (
             <DirectionSyncCard key={s.id} status={s} />
           ))}
@@ -117,50 +117,50 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
         {/* Comparison table */}
         <div className="border-border overflow-hidden rounded-md border text-sm">
           {/* Column headers */}
-          <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] border-b px-3 py-2 text-xs font-semibold">
+          <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] border-b px-4 py-2.5 text-sm font-semibold">
             <span className="text-foreground">{srcLabel}</span>
-            <span className="text-muted-foreground w-28 text-center">vs</span>
+            <span className="text-muted-foreground w-36 text-center">vs</span>
             <span className="text-foreground text-right">{dstLabel}</span>
           </div>
 
           {/* Operations (nonce) row */}
-          <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-3">
+          <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-4 py-4">
             <div>
-              <div className="font-mono text-base font-semibold tabular-nums">
+              <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.source.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+              <div className="text-muted-foreground text-xs">operations relayed</div>
             </div>
-            <div className="flex w-28 flex-col items-center gap-1">
+            <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 Nonce
               </span>
               <NonceLag lag={lag} syncStatus={status.operationStatus} />
             </div>
             <div className="text-right">
-              <div className="font-mono text-base font-semibold tabular-nums">
+              <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.destination.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+              <div className="text-muted-foreground text-xs">operations relayed</div>
             </div>
           </div>
 
           {/* State root row */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 py-3">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-4">
             <div
-              className="text-foreground/80 font-mono text-xs tabular-nums"
+              className="text-foreground/80 font-mono text-sm tabular-nums"
               title={status.source.root}
             >
               {shortenHash(status.source.root, 8, 4)}
             </div>
-            <div className="flex w-28 flex-col items-center gap-1">
+            <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 State Root
               </span>
               <RootMatchBadge match={rootMatch} />
             </div>
             <div
-              className="text-foreground/80 text-right font-mono text-xs tabular-nums"
+              className="text-foreground/80 text-right font-mono text-sm tabular-nums"
               title={status.destination.root}
             >
               {shortenHash(status.destination.root, 8, 4)}
@@ -169,7 +169,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
         </div>
 
         {/* Block heights + last indexed timestamps */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="text-muted-foreground space-y-0.5">
             {status.source.blockNumber !== undefined && (
               <div>
