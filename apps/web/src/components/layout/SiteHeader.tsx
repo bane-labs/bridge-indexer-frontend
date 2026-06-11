@@ -6,7 +6,7 @@ import { ThemeToggle } from "@atlas/ui";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-[#0a0a0a]">
+    <header className="border-border bg-card sticky top-0 z-50 w-full border-b dark:bg-[#0a0a0a]">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Neo logo + wordmark + pipe + tagline */}
         <div className="flex items-center gap-3">
@@ -28,12 +28,12 @@ export function SiteHeader() {
               className="hidden h-7 w-auto shrink-0 dark:block"
               priority
             />
-            <div aria-hidden="true" className="h-5 w-px bg-zinc-300 dark:bg-zinc-700" />
+            <div aria-hidden="true" className="bg-border h-5 w-px" />
             <div>
-              <p className="text-sm leading-tight font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
+              <p className="text-foreground text-sm leading-tight font-semibold tracking-tight">
                 Bridge Indexer
               </p>
-              <p className="hidden text-xs leading-tight text-zinc-500 sm:block dark:text-zinc-400">
+              <p className="text-muted-foreground hidden text-xs leading-tight sm:block">
                 Neo N3 ↔ Neo X bridge monitoring
               </p>
             </div>

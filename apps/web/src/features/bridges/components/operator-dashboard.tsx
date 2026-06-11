@@ -80,7 +80,7 @@ function KpiCard({
 
 function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
   return (
-    <Card className="border-border/60 bg-card/50 backdrop-blur">
+    <Card className="border-border/60 bg-card">
       <CardContent className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-1">
           {/* Operation status counts */}
@@ -136,7 +136,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
           {rows.map((row) => (
             <div
               key={row.id}
-              className="bg-background/60 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+              className="bg-card/80 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <OperationStatusBadge status={row.operationStatus} />
@@ -308,12 +308,6 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function getRowHighlight(operationStatus: string, indexerStatus: string): string {
-  if (operationStatus === "delayed") return "bg-red-500/2";
-  if (indexerStatus === "lagging") return "bg-amber-500/2";
-  return "";
-}
-
 // ─── Main bridge status table ─────────────────────────────
 function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
   const router = useRouter();
@@ -329,9 +323,9 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="bg-card overflow-x-auto rounded-lg border">
       <Table>
-        <TableHeader className="bg-muted/40">
+        <TableHeader className="bg-muted">
           <TableRow>
             <TableHead className="w-10">Status</TableHead>
             <TableHead>Direction</TableHead>
@@ -350,7 +344,7 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
             return (
               <TableRow
                 key={row.id}
-                className={`hover:bg-muted/30 cursor-pointer transition-colors ${getRowHighlight(row.operationStatus, row.indexerStatus)}`}
+                className="hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => router.push(href)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {

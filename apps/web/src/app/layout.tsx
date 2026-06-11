@@ -76,7 +76,7 @@ export default async function RootLayout({
         )}
         <MainProvider>
           <GlobalErrorHandler />
-          <div className="flex min-h-screen flex-col bg-[#f5f5f6] dark:bg-[#131313]">
+          <div className="bg-background flex min-h-screen flex-col dark:bg-[#131313]">
             <SiteHeader />
             {children}
             <SiteFooter />
