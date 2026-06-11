@@ -38,6 +38,11 @@ export interface BackendBridgeOperation {
   completion_timestamp?: string;
   status: BackendOperationStatus;
   amb_message_type?: BackendAMBMessageType;
+  /**
+   * Present on `stuck` operations that have been claimed by the user on the
+   * destination chain. The transaction where the user executed the claim.
+   */
+  claim_tx_hash?: string;
 }
 
 export interface BackendOperationsResponse {

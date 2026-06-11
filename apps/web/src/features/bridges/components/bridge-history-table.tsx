@@ -20,9 +20,36 @@ const STATUS_CONFIG: Record<
   { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
 > = {
   completed: { label: "Completed", variant: "success" },
+  relayed: { label: "Relayed", variant: "secondary" },
   pending: { label: "Relayed", variant: "secondary" },
-  stuck: { label: "Stuck", variant: "destructive" },
 };
+
+const SETTLEMENT_LABEL: Record<string, string> = {
+  waiting_to_be_claimed: "Waiting to be claimed",
+  waiting_for_execution: "Waiting for execution",
+};
+
+function SettlementCell({
+  claimTxHash,
+  settlementStatus,
+  destinationChain,
+}: {
+  claimTxHash?: string;
+  settlementStatus?: string;
+  destinationChain: ChainId;
+}) {
+  if (claimTxHash) {
+    return <TxLinkCell txHash={claimTxHash} chainId={destinationChain} />;
+  }
+  if (settlementStatus) {
+    return (
+      <span className="text-muted-foreground text-sm">
+        {SETTLEMENT_LABEL[settlementStatus] ?? settlementStatus}
+      </span>
+    );
+  }
+  return <span className="text-muted-foreground text-sm">—</span>;
+}
 
 /**
  * History table for a single bridge direction.
@@ -68,13 +95,11 @@ export function BridgeHistoryTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {row.settlementStatus ? (
-                    <span className="text-muted-foreground text-sm capitalize">
-                      {row.settlementStatus}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )}
+                  <SettlementCell
+                    claimTxHash={row.claimTxHash}
+                    settlementStatus={row.settlementStatus}
+                    destinationChain={destinationChain}
+                  />
                 </TableCell>
                 <TableCell className="font-mono text-sm tabular-nums">
                   {row.amount ?? "—"}

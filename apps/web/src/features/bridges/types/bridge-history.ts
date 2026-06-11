@@ -6,15 +6,34 @@ export interface BridgeOperationHistoryRow {
   nonce: number;
   root: string;
   sourceTxHash?: string;
+  /**
+   * Transaction where the relayer updated the root on the destination chain.
+   * Populated once the operation has been relayed.
+   */
   destinationTxHash?: string;
   settledAt?: string;
-  /** Operation status: pending, completed, or stuck. */
-  status: "pending" | "completed" | "stuck";
   /**
-   * Settlement status shown in the UI for relayed (pending) operations.
-   * "claimable" for native/token bridge; "waiting for execution" for message bridge.
+   * Front-end operation status, mapped from the backend status:
+   * - "pending": operation is in transit, not yet visible on the destination.
+   * - "relayed": root has been posted to the destination; awaiting claim or
+   *   execution (was a backend `stuck` or in-relay `pending` operation).
+   * - "completed": fully settled — either directly distributed or after a
+   *   relay-then-claim flow.
    */
-  settlementStatus?: "claimable" | "waiting for execution";
+  status: "pending" | "relayed" | "completed";
+  /**
+   * Settlement disposition for operations in the relay-then-claim /
+   * relay-then-execute flow:
+   * - "waiting_to_be_claimed": relayed, user has not yet claimed (native/token).
+   * - "waiting_for_execution": relayed message not yet executed (message bridge).
+   * - undefined: directly completed with no separate settlement step.
+   */
+  settlementStatus?: "waiting_to_be_claimed" | "waiting_for_execution";
+  /**
+   * Claim transaction hash, present when an operation was relayed and then
+   * explicitly claimed by the user. Rendered as a link in the Settlement column.
+   */
+  claimTxHash?: string;
   /** Transfer amount (string for big number safety). */
   amount?: string;
   /** Sender address on source chain. */

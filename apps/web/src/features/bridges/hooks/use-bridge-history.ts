@@ -9,11 +9,11 @@ import {
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
+import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
 import {
   collectTokenContractsForSymbol,
   operationMatchesTokenSlug,
 } from "../lib/bridge-token-matching";
-import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
 
 import type { BackendBridgeOperation } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
@@ -32,24 +32,59 @@ function buildRows(
   return operations
     .filter((op) => op.direction === direction)
     .sort((a, b) => b.nonce - a.nonce)
-    .map((op) => ({
-      id: `${op.bridge_type}-${direction}-${op.nonce}`,
-      nonce: op.nonce,
-      root: op.root ?? "0x0",
-      sourceTxHash: op.source_tx_hash,
-      destinationTxHash: op.dest_tx_hash,
-      settledAt: op.completion_timestamp,
-      status: op.status,
-      settlementStatus:
-        op.status === "pending"
-          ? op.bridge_type === "message"
-            ? ("waiting for execution" as const)
-            : ("claimable" as const)
-          : undefined,
-      amount: op.amount,
-      fromAddress: op.from_address,
-      toAddress: op.to_address,
-    }));
+    .map((op) => {
+      const base = {
+        id: `${op.bridge_type}-${direction}-${op.nonce}`,
+        nonce: op.nonce,
+        root: op.root ?? "0x0",
+        sourceTxHash: op.source_tx_hash,
+        destinationTxHash: op.dest_tx_hash,
+        amount: op.amount,
+        fromAddress: op.from_address,
+        toAddress: op.to_address,
+      };
+
+      if (op.status === "stuck") {
+        if (op.claim_tx_hash) {
+          // Relayed and subsequently claimed — show as completed with claim
+          // tx link in the Settlement column.
+          return {
+            ...base,
+            status: "completed" as const,
+            claimTxHash: op.claim_tx_hash,
+            settledAt: op.completion_timestamp,
+          };
+        }
+        // Relayed, waiting for the user to claim (native/token) or the
+        // message to be executed (message bridge).
+        return {
+          ...base,
+          status: "relayed" as const,
+          settlementStatus:
+            op.bridge_type === "message"
+              ? ("waiting_for_execution" as const)
+              : ("waiting_to_be_claimed" as const),
+        };
+      }
+
+      if (op.status === "pending") {
+        return {
+          ...base,
+          status: "pending" as const,
+          settlementStatus:
+            op.bridge_type === "message"
+              ? ("waiting_for_execution" as const)
+              : ("waiting_to_be_claimed" as const),
+        };
+      }
+
+      // completed — directly distributed, no separate claim step.
+      return {
+        ...base,
+        status: "completed" as const,
+        settledAt: op.completion_timestamp,
+      };
+    });
 }
 
 function mapOperationsToHistory(

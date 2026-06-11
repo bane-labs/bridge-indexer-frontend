@@ -34,15 +34,48 @@ const NATIVE_HISTORY: BridgeHistoryPageData = {
     {
       sourceChain: "neo_n3",
       destinationChain: "neo_x",
-      rows: Array.from({ length: 10 }, (_, i) => ({
-        id: `native-n3x-${i}`,
-        nonce: 14_832 - i,
-        status: i < 8 ? "completed" : "pending",
-        root: mockRoot("a3f1c9e7d4b82056fa9301ee", i),
-        sourceTxHash: mockTxHash("9a1b2c3d4e5f60718293a4b5c6d7e8f9", i),
-        destinationTxHash: i < 8 ? mockTxHash("f0e1d2c3b4a596870a1b2c3d", i) : undefined,
-        settledAt: i < 8 ? settledTime("2026-03-10T14:32:15Z", i * 4) : undefined,
-      })),
+      rows: Array.from({ length: 10 }, (_, i) => {
+        const base = {
+          id: `native-n3x-${i}`,
+          nonce: 14_832 - i,
+          root: mockRoot("a3f1c9e7d4b82056fa9301ee", i),
+          sourceTxHash: mockTxHash("9a1b2c3d4e5f60718293a4b5c6d7e8f9", i),
+        };
+        // i=0..6: directly completed
+        if (i < 7) {
+          return {
+            ...base,
+            status: "completed" as const,
+            destinationTxHash: mockTxHash("f0e1d2c3b4a596870a1b2c3d", i),
+            settledAt: settledTime("2026-03-10T14:32:15Z", i * 4),
+          };
+        }
+        // i=7: relay-then-claim, already claimed → Completed + claim tx in Settlement
+        if (i === 7) {
+          return {
+            ...base,
+            status: "completed" as const,
+            destinationTxHash: mockTxHash("f0e1d2c3b4a596870a1b2c3d", i),
+            claimTxHash: mockTxHash("aa11bb22cc33dd44ee55ff66", i),
+            settledAt: settledTime("2026-03-10T14:32:15Z", i * 4),
+          };
+        }
+        // i=8: relayed, root posted to dst, waiting for claim → Relayed + Settlement "Waiting to be claimed"
+        if (i === 8) {
+          return {
+            ...base,
+            status: "relayed" as const,
+            destinationTxHash: mockTxHash("f0e1d2c3b4a596870a1b2c3d", i),
+            settlementStatus: "waiting_to_be_claimed" as const,
+          };
+        }
+        // i=9: pending, not yet relayed
+        return {
+          ...base,
+          status: "pending" as const,
+          settlementStatus: "waiting_to_be_claimed" as const,
+        };
+      }),
     },
     {
       sourceChain: "neo_x",
@@ -50,11 +83,12 @@ const NATIVE_HISTORY: BridgeHistoryPageData = {
       rows: Array.from({ length: 10 }, (_, i) => ({
         id: `native-xn3-${i}`,
         nonce: 11_205 - i,
-        status: i < 9 ? "completed" : "pending",
+        status: i < 9 ? ("completed" as const) : ("pending" as const),
         root: mockRoot("b7e4a2d6c93f10584e8b2a61", i),
         sourceTxHash: mockTxHash("5566778899001122334455aa", i),
         destinationTxHash: i < 9 ? mockTxHash("eeff001122334455aabbccdd", i) : undefined,
         settledAt: i < 9 ? settledTime("2026-03-10T14:32:02Z", i * 3) : undefined,
+        ...(i === 9 ? { settlementStatus: "waiting_to_be_claimed" as const } : {}),
       })),
     },
   ],
