@@ -3,7 +3,13 @@ export { cn } from "./lib/utils";
 
 // Hooks
 export type { ResolvedTheme, ThemePreference } from "./hooks/use-theme";
-export { useTheme } from "./hooks/use-theme";
+export {
+  applyResolvedTheme,
+  getThemePreference,
+  resolveTheme,
+  setThemePreference,
+  useTheme,
+} from "./hooks/use-theme";
 export { useZodForm, type UseZodFormOptions } from "./hooks/use-zod-form";
 
 // Form Utilities

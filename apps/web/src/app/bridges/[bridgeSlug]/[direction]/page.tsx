@@ -26,8 +26,8 @@ export default async function BridgeDirectionPage({ params }: BridgeDirectionPag
   }
 
   return (
-    <main className="px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="flex-1">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <BridgeHistoryClient slug={bridgeSlug} direction={direction as BridgeDirectionSlug} />
       </div>
     </main>
