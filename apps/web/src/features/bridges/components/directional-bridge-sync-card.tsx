@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui";
 
 import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
+import { buildDirectionSlug } from "../lib/bridge-slugs";
 
 import { BridgeSideStatePanel } from "./bridge-side-state-panel";
 import { ComparisonSummaryBadge } from "./comparison-summary";
@@ -20,6 +21,7 @@ interface DirectionalBridgeSyncCardProps {
 export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCardProps) {
   const directionLabel = getDirectionLabel(direction.sourceChain, direction.destinationChain);
   const slug = getBridgeSlug(direction.bridgeFamily, direction.tokenSymbol);
+  const directionSlug = buildDirectionSlug(direction.sourceChain);
 
   return (
     <Card className="gap-3">
@@ -52,7 +54,7 @@ export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCa
       <CardFooter className="text-muted-foreground flex items-center justify-between text-xs">
         <span title={direction.lastUpdatedAt}>Updated {relativeTime(direction.lastUpdatedAt)}</span>
         <Link
-          href={`/bridges/${slug}`}
+          href={`/bridges/${slug}/${directionSlug}`}
           className="hover:text-foreground underline-offset-4 hover:underline"
         >
           View history →

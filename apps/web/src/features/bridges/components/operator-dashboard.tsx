@@ -23,6 +23,7 @@ import {
   sortBySeverity,
   toBridgeInstanceRows,
 } from "../lib/bridge-instance";
+import { buildDirectionSlug } from "../lib/bridge-slugs";
 import { relativeTime } from "../lib/formatters";
 
 import { OperationStatusBadge } from "./sync-status-badge";
@@ -151,7 +152,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
                   </span>
                 )}
                 <Link
-                  href={`/bridges/${row.slug}`}
+                  href={`/bridges/${row.slug}/${buildDirectionSlug(row.sourceChain)}`}
                   className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
                 >
                   Inspect →
@@ -344,7 +345,7 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const href = `/bridges/${row.slug}`;
+            const href = `/bridges/${row.slug}/${buildDirectionSlug(row.sourceChain)}`;
 
             return (
               <TableRow

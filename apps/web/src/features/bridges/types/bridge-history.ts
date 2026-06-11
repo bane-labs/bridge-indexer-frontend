@@ -49,11 +49,11 @@ export interface BridgeDirectionHistory {
   rows: BridgeOperationHistoryRow[];
 }
 
-/** Complete history data for a bridge page (both directions). */
+/** Complete history data for a bridge direction page (one direction). */
 export interface BridgeHistoryPageData {
   slug: string;
   bridgeFamily: BridgeFamily;
   tokenSymbol?: string;
   label: string;
-  directions: [BridgeDirectionHistory, BridgeDirectionHistory];
+  directions: [BridgeDirectionHistory];
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
 import { useBridgeHistory } from "../hooks/use-bridge-history";
 
 import { BridgeDetailView } from "./bridge-detail-view";
@@ -8,10 +9,11 @@ import { BridgeHistorySkeleton } from "./bridge-history-skeleton";
 
 interface BridgeHistoryClientProps {
   slug: string;
+  direction: BridgeDirectionSlug;
 }
 
-export function BridgeHistoryClient({ slug }: BridgeHistoryClientProps) {
-  const { data, isLoading, isError } = useBridgeHistory(slug);
+export function BridgeHistoryClient({ slug, direction }: BridgeHistoryClientProps) {
+  const { data, isLoading, isError } = useBridgeHistory(slug, direction);
 
   if (isLoading) {
     return <BridgeHistorySkeleton />;

@@ -8,7 +8,7 @@ import {
   fetchAllBridgeOperationsViaClient,
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
-import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
+import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "../lib/bridge-slugs";
 import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
 import {
   collectTokenContractsForSymbol,
@@ -17,6 +17,7 @@ import {
 
 import type { BackendBridgeOperation } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
+import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
@@ -89,6 +90,7 @@ function buildRows(
 
 function mapOperationsToHistory(
   slug: string,
+  directionSlug: BridgeDirectionSlug,
   operations: BackendBridgeOperation[],
   contractsForTokenSymbol: Set<string>
 ): BridgeHistoryPageData | null {
@@ -113,6 +115,11 @@ function mapOperationsToHistory(
     return null;
   }
 
+  const direction = parseDirectionSlug(directionSlug);
+  if (!direction) {
+    return null;
+  }
+
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
@@ -120,24 +127,19 @@ function mapOperationsToHistory(
     label: buildBridgeLabel(parsed.bridgeFamily, parsed.tokenSymbol),
     directions: [
       {
-        sourceChain: "neo_n3",
-        destinationChain: "neo_x",
-        rows: buildRows(filtered, "deposit"),
-      },
-      {
-        sourceChain: "neo_x",
-        destinationChain: "neo_n3",
-        rows: buildRows(filtered, "withdrawal"),
+        sourceChain: direction.sourceChain,
+        destinationChain: direction.destinationChain,
+        rows: buildRows(filtered, direction.backendDirection),
       },
     ],
   };
 }
 
-export function useBridgeHistory(slug: string) {
+export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlug) {
   const api = useApiClient();
 
   return useQuery<BridgeHistoryQueryData | null>({
-    queryKey: ["bridge-history", slug],
+    queryKey: ["bridge-history", slug, directionSlug],
     queryFn: async () => {
       const parsed = parseBridgeSlug(slug);
       if (!parsed) {
@@ -154,11 +156,17 @@ export function useBridgeHistory(slug: string) {
           ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
           : new Set<string>();
 
-      const history = mapOperationsToHistory(slug, operations, contractsForTokenSymbol);
+      const history = mapOperationsToHistory(
+        slug,
+        directionSlug,
+        operations,
+        contractsForTokenSymbol
+      );
       if (!history) {
         return null;
       }
 
+      const parsedDirection = parseDirectionSlug(directionSlug);
       const statuses = mapOperationsToDirectionalStatuses(
         operations.filter((op) => {
           if (history.bridgeFamily !== "token" || !history.tokenSymbol) {
@@ -166,7 +174,7 @@ export function useBridgeHistory(slug: string) {
           }
           return operationMatchesTokenSlug(op, history.tokenSymbol, contractsForTokenSymbol);
         })
-      );
+      ).filter((s) => !parsedDirection || s.sourceChain === parsedDirection.sourceChain);
 
       return { history, statuses };
     },

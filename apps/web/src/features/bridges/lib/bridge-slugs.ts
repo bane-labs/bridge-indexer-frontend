@@ -1,5 +1,30 @@
 import type { BridgeFamily, ChainId } from "../types/bridge";
 
+/** URL segment representing a single bridge direction. */
+export type BridgeDirectionSlug = "n3-to-x" | "x-to-n3";
+
+/** Parse a direction URL segment into chain IDs and backend direction. */
+export function parseDirectionSlug(
+  slug: string
+): {
+  sourceChain: ChainId;
+  destinationChain: ChainId;
+  backendDirection: "deposit" | "withdrawal";
+} | null {
+  if (slug === "n3-to-x") {
+    return { sourceChain: "neo_n3", destinationChain: "neo_x", backendDirection: "deposit" };
+  }
+  if (slug === "x-to-n3") {
+    return { sourceChain: "neo_x", destinationChain: "neo_n3", backendDirection: "withdrawal" };
+  }
+  return null;
+}
+
+/** Build a direction URL segment from the source chain of a directional bridge. */
+export function buildDirectionSlug(sourceChain: ChainId): BridgeDirectionSlug {
+  return sourceChain === "neo_n3" ? "n3-to-x" : "x-to-n3";
+}
+
 /** Map a bridge slug back to its family and optional token symbol. */
 export function parseBridgeSlug(
   slug: string
@@ -36,7 +61,7 @@ export function buildBridgeContext(
     message: "Message",
   };
   const familyLabel = familyLabelMap[bridgeFamily];
-  const chains = `${sourceLabel} ↔ ${destinationLabel}`;
+  const chains = `${sourceLabel} → ${destinationLabel}`;
 
   if (tokenSymbol) return `${familyLabel} | ${chains} | ${tokenSymbol}`;
   return `${familyLabel} | ${chains}`;

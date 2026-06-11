@@ -1,21 +1,11 @@
 import { fetchAllBridgeOperations, fetchSyncInstances } from "./bridge-operations-api";
-import { parseBridgeSlug } from "./bridge-slugs";
+import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "./bridge-slugs";
 import { collectTokenContractsForSymbol, operationMatchesTokenSlug } from "./bridge-token-matching";
 
-import type { ChainId } from "../types/bridge";
+import type { BridgeDirectionSlug } from "./bridge-slugs";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
-
-function directionChains(direction: "deposit" | "withdrawal"): {
-  sourceChain: ChainId;
-  destinationChain: ChainId;
-} {
-  if (direction === "deposit") {
-    return { sourceChain: "neo_n3", destinationChain: "neo_x" };
-  }
-  return { sourceChain: "neo_x", destinationChain: "neo_n3" };
-}
 
 function buildRows(
   operations: Awaited<ReturnType<typeof fetchAllBridgeOperations>>,
@@ -75,9 +65,12 @@ function buildRows(
 }
 
 /**
- * Fetch bridge history data for a given slug from real backend operations.
+ * Fetch bridge history data for a given slug and direction from real backend operations.
  */
-export async function getBridgeHistory(slug: string): Promise<BridgeHistoryPageData | null> {
+export async function getBridgeHistory(
+  slug: string,
+  directionSlug: BridgeDirectionSlug
+): Promise<BridgeHistoryPageData | null> {
   const parsed = parseBridgeSlug(slug);
   if (!parsed) {
     return null;
@@ -109,36 +102,23 @@ export async function getBridgeHistory(slug: string): Promise<BridgeHistoryPageD
     return null;
   }
 
-  const depositChains = directionChains("deposit");
-  const withdrawalChains = directionChains("withdrawal");
-
-  const depositRows = buildRows(filtered, "deposit");
-  const withdrawalRows = buildRows(filtered, "withdrawal");
-
-  let label: string;
-  if (parsed.tokenSymbol) {
-    label = `${parsed.tokenSymbol} Token Bridge`;
-  } else if (parsed.bridgeFamily === "native") {
-    label = "Native Bridge";
-  } else {
-    label = "Message Bridge";
+  const direction = parseDirectionSlug(directionSlug);
+  if (!direction) {
+    return null;
   }
+
+  const rows = buildRows(filtered, direction.backendDirection);
 
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
     tokenSymbol: parsed.tokenSymbol,
-    label,
+    label: buildBridgeLabel(parsed.bridgeFamily, parsed.tokenSymbol),
     directions: [
       {
-        sourceChain: depositChains.sourceChain,
-        destinationChain: depositChains.destinationChain,
-        rows: depositRows,
-      },
-      {
-        sourceChain: withdrawalChains.sourceChain,
-        destinationChain: withdrawalChains.destinationChain,
-        rows: withdrawalRows,
+        sourceChain: direction.sourceChain,
+        destinationChain: direction.destinationChain,
+        rows,
       },
     ],
   };
