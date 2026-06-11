@@ -87,10 +87,10 @@ function buildPageWindow(current: number, total: number): Array<number | "ellips
 
   const pages: Array<number | "ellipsis"> = [];
   for (let i = 0; i < sorted.length; i++) {
-    if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+    if (i > 0 && sorted[i]! - sorted[i - 1]! > 1) {
       pages.push("ellipsis");
     }
-    pages.push(sorted[i]);
+    pages.push(sorted[i]!);
   }
   return pages;
 }
