@@ -65,7 +65,7 @@ export function BridgeHistoryTable({
   }
 
   return (
-    <div className="bg-card overflow-x-auto rounded-md border">
+    <div className="bg-card overflow-x-auto rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-muted sticky top-0 z-10">
           <TableRow>

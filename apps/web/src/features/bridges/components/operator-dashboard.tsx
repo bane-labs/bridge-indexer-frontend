@@ -183,7 +183,7 @@ function FilterPill<T extends string>({
     <button
       type="button"
       onClick={() => onSelect(value)}
-      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+      className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
         active
           ? "bg-primary text-primary-foreground border-transparent"
           : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
@@ -323,7 +323,7 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
   }
 
   return (
-    <div className="bg-card overflow-x-auto rounded-lg border">
+    <div className="bg-card overflow-x-auto rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-muted">
           <TableRow>
