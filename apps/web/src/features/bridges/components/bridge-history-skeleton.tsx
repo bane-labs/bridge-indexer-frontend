@@ -14,9 +14,9 @@ export function BridgeHistorySkeleton() {
         <Skeleton className="h-4 w-48" />
       </div>
 
-      {/* Sync summary cards — full width, one per direction */}
+      {/* Sync summary card — one for the current direction */}
       <div className="grid gap-4">
-        {[0, 1].map((i) => (
+        {[0].map((i) => (
           <Card key={i} className="gap-0">
             <CardContent className="space-y-4">
               {/* Direction heading + status badge */}
@@ -80,8 +80,8 @@ export function BridgeHistorySkeleton() {
         ))}
       </div>
 
-      {/* History tables — one per direction */}
-      {[0, 1].map((i) => (
+      {/* History table — one for the current direction */}
+      {[0].map((i) => (
         <div key={i} className="space-y-4">
           <div>
             <Skeleton className="mb-1 h-6 w-40" />
@@ -89,26 +89,28 @@ export function BridgeHistorySkeleton() {
           </div>
           <Card>
             <CardContent className="space-y-3 p-0">
-              {/* Table header: Nonce, Status, Amount, Root, Source Tx, Dest Tx, Settled */}
+              {/* Table header: Nonce, Status, Settlement, Amount, Root, Source Tx, Dest Tx, Settled */}
               <div className="bg-muted/50 flex gap-4 px-4 py-3">
-                <Skeleton className="h-4 w-[8%]" />
+                <Skeleton className="h-4 w-[7%]" />
+                <Skeleton className="h-4 w-[9%]" />
+                <Skeleton className="h-4 w-[11%]" />
+                <Skeleton className="h-4 w-[7%]" />
+                <Skeleton className="h-4 w-[15%]" />
+                <Skeleton className="h-4 w-[15%]" />
+                <Skeleton className="h-4 w-[15%]" />
                 <Skeleton className="h-4 w-[10%]" />
-                <Skeleton className="h-4 w-[8%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[12%]" />
               </div>
               {/* Row skeletons */}
               {Array.from({ length: 5 }, (_, j) => (
                 <div key={j} className="flex gap-4 px-4 py-2">
-                  <Skeleton className="h-4 w-[8%]" />
-                  <Skeleton className="h-5 w-[10%]" />
-                  <Skeleton className="h-4 w-[8%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[12%]" />
+                  <Skeleton className="h-4 w-[7%]" />
+                  <Skeleton className="h-5 w-[9%]" />
+                  <Skeleton className="h-4 w-[11%]" />
+                  <Skeleton className="h-4 w-[7%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[10%]" />
                 </div>
               ))}
             </CardContent>

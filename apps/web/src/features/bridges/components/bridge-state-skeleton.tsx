@@ -39,11 +39,12 @@ export function BridgeStateSkeleton() {
       {/* Filter skeleton */}
       <div className="flex flex-wrap items-center gap-3">
         <Skeleton className="h-9 w-60" />
-        <div className="flex gap-1.5">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-7 w-16 rounded-full" />
           ))}
         </div>
+        <Skeleton className="h-4 w-20" />
       </div>
 
       {/* Section skeletons */}

@@ -9,14 +9,25 @@ export function OperatorDashboardSkeleton() {
     <div className="space-y-6">
       {/* Summary strip */}
       <Card className="border-border/60">
-        <CardContent className="flex flex-wrap items-center gap-6 py-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 px-3">
+        <CardContent className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-1">
+            {/* Total */}
+            <div className="flex flex-col items-center gap-0.5 px-3">
               <Skeleton className="h-7 w-10" />
-              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-10" />
             </div>
-          ))}
-          <div className="ml-auto">
+            {/* Divider */}
+            <div className="bg-border mx-1 h-8 w-px" aria-hidden="true" />
+            {/* Synced, Pending, Delayed */}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-0.5 px-3">
+                <Skeleton className="h-7 w-10" />
+                <Skeleton className="h-3 w-14" />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-3.5 w-16" />
             <Skeleton className="h-3 w-24" />
           </div>
         </CardContent>
