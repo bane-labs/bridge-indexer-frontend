@@ -28,7 +28,11 @@ import { relativeTime } from "../lib/formatters";
 
 import { OperationStatusBadge } from "./sync-status-badge";
 
-import type { BridgeDashboardSummary, DirectionalBridgeStatus } from "../types/bridge";
+import type {
+  BridgeDashboardSummary,
+  ChainIndexerLivenessState,
+  DirectionalBridgeStatus,
+} from "../types/bridge";
 
 // ─── Filter types ─────────────────────────────────────────
 type StatusFilter = "all" | "synced" | "pending" | "delayed" | "lagging";
@@ -390,13 +394,52 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
   );
 }
 
+// ─── Chain indexer liveness strip ───────────────────────
+function ChainLivenessStrip({ liveness }: { liveness: ChainIndexerLivenessState[] }) {
+  if (liveness.length === 0) return null;
+
+  const CHAIN_LABELS: Record<string, string> = {
+    neo_n3: "Neo N3",
+    neo_x: "Neo X",
+  };
+
+  return (
+    <Card className="border-border/60 bg-card">
+      <CardContent className="flex flex-wrap items-center gap-6 py-3">
+        <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+          Indexer liveness
+        </span>
+        {liveness.map((l) => (
+          <div key={l.chain} className="flex items-center gap-2 text-xs">
+            <span className="text-foreground/80 font-medium">
+              {CHAIN_LABELS[l.chain] ?? l.chain}
+            </span>
+            <span className="text-muted-foreground font-mono">
+              Block #{l.lastBlockHeight.toLocaleString("en-US")}
+            </span>
+            <span className="text-muted-foreground" title={l.updatedAt}>
+              {relativeTime(l.updatedAt)}
+            </span>
+            {l.isSyncing && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+                ↻ syncing
+              </span>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Composed dashboard view ──────────────────────────────
 interface OperatorDashboardProps {
   statuses: DirectionalBridgeStatus[];
   summary: BridgeDashboardSummary;
+  chainLiveness?: ChainIndexerLivenessState[];
 }
 
-export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps) {
+export function OperatorDashboard({ statuses, summary, chainLiveness }: OperatorDashboardProps) {
   const allRows = useMemo(() => toBridgeInstanceRows(statuses), [statuses]);
   const problematicRows = useMemo(() => getProblematicRows(allRows), [allRows]);
 
@@ -443,6 +486,9 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
     <div className="space-y-6">
       {/* A. Top summary strip */}
       <SummaryStrip summary={summary} />
+
+      {/* Chain indexer liveness */}
+      {chainLiveness && chainLiveness.length > 0 && <ChainLivenessStrip liveness={chainLiveness} />}
 
       {/* D. Needs attention — only when problems exist */}
       <NeedsAttention rows={problematicRows} />

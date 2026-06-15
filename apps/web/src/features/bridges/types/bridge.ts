@@ -78,10 +78,20 @@ export interface BridgeDashboardSummary {
   healthStatus?: "healthy" | "degraded" | "unhealthy";
 }
 
+/** Per-chain indexer liveness snapshot for dashboard display. */
+export interface ChainIndexerLivenessState {
+  chain: "neo_n3" | "neo_x";
+  lastBlockHeight: number;
+  isSyncing: boolean;
+  updatedAt: string;
+}
+
 /** Complete dashboard data response. */
 export interface BridgeDashboardData {
   summary: BridgeDashboardSummary;
   groups: BridgeGroup[];
   /** Flat list of all directional statuses for table-based views. */
   statuses: DirectionalBridgeStatus[];
+  /** Per-chain indexer liveness (last processed block + timestamp). */
+  chainLiveness?: ChainIndexerLivenessState[];
 }

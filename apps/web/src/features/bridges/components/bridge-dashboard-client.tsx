@@ -22,5 +22,11 @@ export function BridgeDashboardClient() {
     return <BridgeDashboardEmpty />;
   }
 
-  return <OperatorDashboard statuses={data.statuses} summary={data.summary} />;
+  return (
+    <OperatorDashboard
+      statuses={data.statuses}
+      summary={data.summary}
+      chainLiveness={data.chainLiveness}
+    />
+  );
 }

@@ -6,6 +6,7 @@ import { useApiClient } from "@/lib/api/hooks";
 
 import {
   fetchAllBridgeOperationsViaClient,
+  fetchIndexerStateViaClient,
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "../lib/bridge-slugs";
@@ -15,15 +16,16 @@ import {
   operationMatchesTokenSlug,
 } from "../lib/bridge-token-matching";
 
-import type { BackendBridgeOperation } from "../types/backend-api";
-import type { BridgeHistoryPageData } from "../types/bridge-history";
 import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
+import type { BackendBridgeOperation, BackendIndexerStateResponse } from "../types/backend-api";
+import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
 interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
   statuses: ReturnType<typeof mapOperationsToDirectionalStatuses>;
+  indexerState: BackendIndexerStateResponse;
 }
 
 function buildRows(
@@ -69,13 +71,10 @@ function buildRows(
       }
 
       if (op.status === "pending") {
+        // Not yet indexed on the destination chain — no settlement action yet.
         return {
           ...base,
           status: "pending" as const,
-          settlementStatus:
-            op.bridge_type === "message"
-              ? ("waiting_for_execution" as const)
-              : ("waiting_to_be_claimed" as const),
         };
       }
 
@@ -146,9 +145,10 @@ export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlu
         return null;
       }
 
-      const [operations, syncInstances] = await Promise.all([
+      const [operations, syncInstances, indexerState] = await Promise.all([
         fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
         fetchSyncInstancesViaClient(api),
+        fetchIndexerStateViaClient(api),
       ]);
 
       const contractsForTokenSymbol =
@@ -176,7 +176,7 @@ export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlu
         })
       ).filter((s) => !parsedDirection || s.sourceChain === parsedDirection.sourceChain);
 
-      return { history, statuses };
+      return { history, statuses, indexerState };
     },
     staleTime: 30000,
     refetchInterval: 60000,

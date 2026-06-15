@@ -2,8 +2,8 @@ import { fetchAllBridgeOperations, fetchSyncInstances } from "./bridge-operation
 import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "./bridge-slugs";
 import { collectTokenContractsForSymbol, operationMatchesTokenSlug } from "./bridge-token-matching";
 
-import type { BridgeDirectionSlug } from "./bridge-slugs";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
+import type { BridgeDirectionSlug } from "./bridge-slugs";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
@@ -46,13 +46,10 @@ function buildRows(
       }
 
       if (op.status === "pending") {
+        // Not yet indexed on the destination chain — no settlement action yet.
         return {
           ...base,
           status: "pending" as const,
-          settlementStatus:
-            op.bridge_type === "message"
-              ? ("waiting_for_execution" as const)
-              : ("waiting_to_be_claimed" as const),
         };
       }
 

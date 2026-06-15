@@ -15,20 +15,23 @@ import {
 import { BridgeHistorySection } from "./bridge-history-section";
 import { SyncStatusBadge } from "./sync-status-badge";
 
-import type { DirectionalBridgeStatus } from "../types/bridge";
+import type { BackendIndexerState, BackendIndexerStateResponse } from "../types/backend-api";
+import type { ChainId, DirectionalBridgeStatus } from "../types/bridge";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 interface BridgeDetailViewProps {
   history: BridgeHistoryPageData;
   /** Matching directional bridge statuses (sync state) for this bridge. */
   statuses: DirectionalBridgeStatus[];
+  /** Per-chain indexer state for liveness display. */
+  indexerState?: BackendIndexerStateResponse;
 }
 
 /**
  * Full detail view for a single bridge instance (both directions).
  * Composes: header → sync summary cards → history tables.
  */
-export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
+export function BridgeDetailView({ history, statuses, indexerState }: BridgeDetailViewProps) {
   const [first] = history.directions;
   const sourceLabel = getChainLabel(first.sourceChain);
   const destLabel = getChainLabel(first.destinationChain);
@@ -74,7 +77,7 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
       {statuses.length > 0 && (
         <div className="mb-8 grid gap-4">
           {statuses.map((s) => (
-            <DirectionSyncCard key={s.id} status={s} />
+            <DirectionSyncCard key={s.id} status={s} indexerState={indexerState} />
           ))}
         </div>
       )}
@@ -93,7 +96,13 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
 }
 
 // ─── Compact sync summary card per direction ──────────────
-function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
+function DirectionSyncCard({
+  status,
+  indexerState,
+}: {
+  status: DirectionalBridgeStatus;
+  indexerState?: BackendIndexerStateResponse;
+}) {
   const directionLabel = getDirectionLabel(status.sourceChain, status.destinationChain);
   const srcLabel = getChainLabel(status.sourceChain);
   const dstLabel = getChainLabel(status.destinationChain);
@@ -197,6 +206,15 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
             </div>
           </div>
         </div>
+
+        {/* Chain indexer liveness */}
+        {indexerState && (
+          <ChainIndexerLiveness
+            sourceChain={status.sourceChain}
+            destinationChain={status.destinationChain}
+            indexerState={indexerState}
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -233,5 +251,65 @@ function RootMatchBadge({ match }: { match: boolean }) {
     <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
       ✕ Roots differ
     </span>
+  );
+}
+
+// ─── Chain indexer liveness strip ─────────────────────────
+function ChainIndexerLivenessRow({
+  state,
+  label,
+  alignRight,
+}: {
+  state: BackendIndexerState | null;
+  label: string;
+  alignRight?: boolean;
+}) {
+  if (!state) return null;
+  const isSyncing = state.is_syncing;
+  return (
+    <div className={`text-muted-foreground space-y-0.5 text-xs${alignRight ? "text-right" : ""}`}>
+      <div className="text-[11px] font-medium tracking-wide uppercase">{label}</div>
+      <div>
+        Chain head:{" "}
+        <span className="text-foreground/70 font-mono">
+          {formatBlockNumber(state.last_block_height)}
+        </span>
+      </div>
+      <div title={state.updated_at} className="flex flex-wrap items-center gap-1.5">
+        <span>{relativeTime(state.updated_at)}</span>
+        {isSyncing && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+            ↻ syncing
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChainIndexerLiveness({
+  sourceChain,
+  destinationChain,
+  indexerState,
+}: {
+  sourceChain: ChainId;
+  destinationChain: ChainId;
+  indexerState: BackendIndexerStateResponse;
+}) {
+  const srcState = sourceChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
+  const dstState = destinationChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
+  const srcLabel = getChainLabel(sourceChain);
+  const dstLabel = getChainLabel(destinationChain);
+
+  return (
+    <div className="border-t pt-3">
+      <div className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+        Indexer liveness
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <ChainIndexerLivenessRow state={srcState} label={srcLabel} />
+        <ChainIndexerLivenessRow state={dstState} label={dstLabel} alignRight />
+      </div>
+    </div>
   );
 }

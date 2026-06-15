@@ -17,11 +17,11 @@ interface BridgeHistoryTableProps {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
+  { label: string; variant: "success" | "destructive" | "warning" | "secondary" | "info" }
 > = {
   completed: { label: "Completed", variant: "success" },
   relayed: { label: "Relayed", variant: "secondary" },
-  pending: { label: "Relayed", variant: "secondary" },
+  pending: { label: "In Progress", variant: "info" },
 };
 
 const SETTLEMENT_LABEL: Record<string, string> = {

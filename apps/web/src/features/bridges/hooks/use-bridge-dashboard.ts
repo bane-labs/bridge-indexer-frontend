@@ -32,6 +32,27 @@ export function useBridgeDashboard() {
       const healthSummary = extractHealthSummary(health);
       dashboard.summary.healthStatus = healthSummary.healthStatus;
 
+      dashboard.chainLiveness = (
+        [
+          indexerState.neo_n3
+            ? {
+                chain: "neo_n3" as const,
+                lastBlockHeight: indexerState.neo_n3.last_block_height,
+                isSyncing: indexerState.neo_n3.is_syncing,
+                updatedAt: indexerState.neo_n3.updated_at,
+              }
+            : null,
+          indexerState.neo_x
+            ? {
+                chain: "neo_x" as const,
+                lastBlockHeight: indexerState.neo_x.last_block_height,
+                isSyncing: indexerState.neo_x.is_syncing,
+                updatedAt: indexerState.neo_x.updated_at,
+              }
+            : null,
+        ] as const
+      ).filter((s): s is NonNullable<typeof s> => s !== null);
+
       return dashboard;
     },
     staleTime: 30000,
