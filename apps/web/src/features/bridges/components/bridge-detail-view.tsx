@@ -275,7 +275,10 @@ function ChainIndexerLivenessRow({
           {formatBlockNumber(state.last_block_height)}
         </span>
       </div>
-      <div title={state.updated_at} className="flex flex-wrap items-center gap-1.5">
+      <div
+        title={state.updated_at}
+        className={`flex flex-wrap items-center gap-1.5${alignRight ? "justify-end" : ""}`}
+      >
         <span>{relativeTime(state.updated_at)}</span>
         {isSyncing && (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
