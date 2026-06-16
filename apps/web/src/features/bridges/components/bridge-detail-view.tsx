@@ -267,7 +267,13 @@ function ChainIndexerLivenessRow({
   if (!state) return null;
   const isSyncing = state.is_syncing;
   return (
-    <div className={`text-muted-foreground space-y-0.5 text-xs${alignRight ? "text-right" : ""}`}>
+    <div
+      className={
+        alignRight
+          ? "text-muted-foreground space-y-0.5 text-right text-xs"
+          : "text-muted-foreground space-y-0.5 text-xs"
+      }
+    >
       <div className="text-[11px] font-medium tracking-wide uppercase">{label}</div>
       <div>
         Chain head:{" "}
@@ -277,7 +283,11 @@ function ChainIndexerLivenessRow({
       </div>
       <div
         title={state.updated_at}
-        className={`flex flex-wrap items-center gap-1.5${alignRight ? "justify-end" : ""}`}
+        className={
+          alignRight
+            ? "flex flex-wrap items-center justify-end gap-1.5"
+            : "flex flex-wrap items-center gap-1.5"
+        }
       >
         <span>{relativeTime(state.updated_at)}</span>
         {isSyncing && (
