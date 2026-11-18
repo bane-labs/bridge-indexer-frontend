@@ -1,6 +1,7 @@
 import { fetchHealth, fetchIndexerState, fetchSyncInstances } from "./bridge-operations-api";
+import { getOperationalHealth } from "./operational-health";
 import { buildDashboardData } from "./bridge-status";
-import { extractHealthSummary, mapSyncInstancesToStatuses } from "./sync-instance-mapper";
+import { mapSyncInstancesToStatuses } from "./sync-instance-mapper";
 
 import type { BridgeDashboardData } from "../types/bridge";
 
@@ -13,15 +14,14 @@ import type { BridgeDashboardData } from "../types/bridge";
 export async function getBridgeDashboard(): Promise<BridgeDashboardData> {
   const [syncInstances, health, indexerState] = await Promise.all([
     fetchSyncInstances(),
-    fetchHealth(),
+    fetchHealth().catch(() => undefined),
     fetchIndexerState(),
   ]);
 
   const statuses = mapSyncInstancesToStatuses(syncInstances, indexerState);
   const dashboard = buildDashboardData(statuses);
 
-  const healthSummary = extractHealthSummary(health);
-  dashboard.summary.healthStatus = healthSummary.healthStatus;
+  dashboard.summary.health = getOperationalHealth(health);
 
   return dashboard;
 }

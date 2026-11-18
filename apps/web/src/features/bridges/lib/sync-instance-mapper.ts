@@ -14,7 +14,6 @@ import type {
   BackendDirectionalSyncStatus,
   BackendIndexerState,
   BackendIndexerStateResponse,
-  BackendOverallHealth,
 } from "../types/backend-api";
 import type {
   ChainId,
@@ -113,14 +112,4 @@ export function mapSyncInstancesToStatuses(
   indexerState: BackendIndexerStateResponse
 ): DirectionalBridgeStatus[] {
   return syncInstances.map((sync) => mapInstance(sync, indexerState));
-}
-
-/**
- * Compute aggregate health counts from backend health response.
- */
-export function extractHealthSummary(health: BackendOverallHealth) {
-  return {
-    healthStatus: health.status,
-    updatedAt: health.updated_at,
-  };
 }

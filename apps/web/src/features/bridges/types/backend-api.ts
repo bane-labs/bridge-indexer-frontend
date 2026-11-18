@@ -97,11 +97,35 @@ export interface BackendBridgeHealth {
   uptime_percentage?: number;
 }
 
-export interface BackendOverallHealth {
+export interface BackendLegacyHealth {
   status: BackendHealthStatus;
   bridges: BackendBridgeHealth[];
   updated_at: string;
 }
+
+export interface BackendOperationalHealth {
+  apiVersion: "v1";
+  overallStatus: BackendHealthStatus | "paused" | "unknown";
+  checkedAt: string | null;
+  summary: string;
+  issueCount: number;
+  issues: {
+    code: string;
+    severity: string;
+    message: string;
+    chain?: string;
+    instanceId?: string;
+    since?: string;
+  }[];
+  bridges: {
+    bridgeType: BackendBridgeType;
+    directions: { srcChain: string; dstChain: string; paused: boolean | null }[];
+    pending: number;
+    stuck: number;
+  }[];
+}
+
+export type BackendOverallHealth = BackendLegacyHealth | BackendOperationalHealth;
 
 // ---------------------------------------------------------------------------
 // GET /health/delays

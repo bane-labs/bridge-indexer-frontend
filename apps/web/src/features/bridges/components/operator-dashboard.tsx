@@ -24,6 +24,7 @@ import {
 } from "../lib/bridge-instance";
 import { relativeTime } from "../lib/formatters";
 
+import { OperationalHealthSummary } from "./operational-health-summary";
 import { OperationStatusBadge } from "./sync-status-badge";
 
 import type { BridgeDashboardSummary, DirectionalBridgeStatus } from "../types/bridge";
@@ -89,7 +90,6 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
         </div>
         <div className="flex items-center gap-3">
-          {summary.healthStatus && <HealthStatusIndicator status={summary.healthStatus} />}
           <span
             className="text-muted-foreground text-xs tabular-nums"
             title={summary.lastRefreshedAt}
@@ -99,21 +99,6 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function HealthStatusIndicator({ status }: { status: "healthy" | "degraded" | "unhealthy" }) {
-  const config = {
-    healthy: { label: "Healthy", color: "text-emerald-500", dot: "bg-emerald-500" },
-    degraded: { label: "Degraded", color: "text-amber-400", dot: "bg-amber-400" },
-    unhealthy: { label: "Unhealthy", color: "text-red-400", dot: "bg-red-400" },
-  }[status];
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.color}`}>
-      <span className={`inline-block h-2 w-2 rounded-full ${config.dot}`} aria-hidden="true" />
-      {config.label}
-    </span>
   );
 }
 
@@ -440,6 +425,7 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
   return (
     <div className="space-y-6">
       {/* A. Top summary strip */}
+      <OperationalHealthSummary health={summary.health} />
       <SummaryStrip summary={summary} />
 
       {/* D. Needs attention — only when problems exist */}

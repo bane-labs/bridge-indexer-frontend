@@ -1,3 +1,5 @@
+import type { BackendOperationalHealth } from "./backend-api";
+
 /** Chain identifiers for the bridge network. */
 export type ChainId = "neo_n3" | "neo_x";
 
@@ -75,8 +77,7 @@ export interface BridgeDashboardSummary {
   /** Instances where indexer state cannot be determined. */
   indexerUnknown: number;
   lastRefreshedAt?: string;
-  /** Overall health status from backend. */
-  healthStatus?: "healthy" | "degraded" | "unhealthy";
+  health?: BackendOperationalHealth | "unavailable" | "failed";
 }
 
 /** Complete dashboard data response. */

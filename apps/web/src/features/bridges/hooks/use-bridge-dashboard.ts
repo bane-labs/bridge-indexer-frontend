@@ -9,8 +9,9 @@ import {
   fetchIndexerStateViaClient,
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
+import { getOperationalHealth } from "../lib/operational-health";
 import { buildDashboardData } from "../lib/bridge-status";
-import { extractHealthSummary, mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
+import { mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
 
 import type { BridgeDashboardData } from "../types/bridge";
 
@@ -22,15 +23,14 @@ export function useBridgeDashboard() {
     queryFn: async () => {
       const [syncInstances, health, indexerState] = await Promise.all([
         fetchSyncInstancesViaClient(api),
-        fetchHealthViaClient(api),
+        fetchHealthViaClient(api).catch(() => undefined),
         fetchIndexerStateViaClient(api),
       ]);
 
       const statuses = mapSyncInstancesToStatuses(syncInstances, indexerState);
       const dashboard = buildDashboardData(statuses);
 
-      const healthSummary = extractHealthSummary(health);
-      dashboard.summary.healthStatus = healthSummary.healthStatus;
+      dashboard.summary.health = getOperationalHealth(health);
 
       return dashboard;
     },
