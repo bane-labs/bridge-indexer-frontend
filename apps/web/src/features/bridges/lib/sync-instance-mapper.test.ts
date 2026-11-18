@@ -26,18 +26,18 @@ const missingIndexers = { neo_n3: null, neo_x: null };
 test("maps each side's observations and preserves source-ahead without guessing relay age", () => {
   const [direction] = mapSyncInstancesToStatuses([instance], missingIndexers);
 
-  expect(direction.source).toMatchObject({
+  expect(direction?.source).toMatchObject({
     nonce: 10,
     blockNumber: 0,
     updatedAt: instance.src_observed_at,
   });
-  expect(direction.destination).toMatchObject({
+  expect(direction?.destination).toMatchObject({
     nonce: 1,
     blockNumber: 88,
     updatedAt: instance.dst_observed_at,
   });
-  expect(direction.operationStatus).toBe("pending");
-  expect(direction.indexerStatus).toBe("unknown");
+  expect(direction?.operationStatus).toBe("pending");
+  expect(direction?.indexerStatus).toBe("unknown");
 });
 
 test("keeps partial observations and groups token directions by contract pair", () => {
@@ -66,8 +66,8 @@ test("keeps partial observations and groups token directions by contract pair", 
     missingIndexers
   );
 
-  expect(directions[2].destination).toEqual({});
-  expect(directions[2].operationStatus).toBe("unknown");
+  expect(directions[2]?.destination).toEqual({});
+  expect(directions[2]?.operationStatus).toBe("unknown");
   expect(buildDashboardData(directions).groups.map((group) => group.directions.length)).toEqual([
     2, 1,
   ]);
