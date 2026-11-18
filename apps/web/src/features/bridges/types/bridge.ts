@@ -17,12 +17,12 @@ export type IndexerStatus = "fresh" | "lagging" | "unknown";
  * Relay progress of a directional bridge instance.
  * Answers: "Is the bridge behaving as expected?"
  */
-export type OperationStatus = "synced" | "pending" | "delayed";
+export type OperationStatus = "synced" | "pending" | "delayed" | "root_mismatch" | "unknown";
 
 /** State snapshot for one side (source or destination) of a bridge. */
 export interface BridgeSideState {
-  nonce: number;
-  root: string;
+  nonce?: number;
+  root?: string;
   blockNumber?: number;
   updatedAt?: string;
 }
@@ -32,6 +32,7 @@ export interface DirectionalBridgeStatus {
   id: string;
   bridgeFamily: BridgeFamily;
   tokenSymbol?: string;
+  tokenPairId?: string;
   sourceChain: ChainId;
   destinationChain: ChainId;
   source: BridgeSideState;
@@ -40,7 +41,7 @@ export interface DirectionalBridgeStatus {
   operationStatus: OperationStatus;
   /** Data freshness — can we trust the data we are showing? */
   indexerStatus: IndexerStatus;
-  lastUpdatedAt: string;
+  lastUpdatedAt?: string;
   /** Server-provided sync reason from /sync/instances. */
   syncReason?: string;
   /** Nonce lag (source - destination). */
@@ -73,7 +74,7 @@ export interface BridgeDashboardSummary {
   lagging: number;
   /** Instances where indexer state cannot be determined. */
   indexerUnknown: number;
-  lastRefreshedAt: string;
+  lastRefreshedAt?: string;
   /** Overall health status from backend. */
   healthStatus?: "healthy" | "degraded" | "unhealthy";
 }

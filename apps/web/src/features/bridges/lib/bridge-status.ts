@@ -18,6 +18,8 @@ export function deriveOperationStatus(
   source: BridgeSideState,
   destination: BridgeSideState
 ): OperationStatus {
+  if (source.nonce === undefined || destination.nonce === undefined) return "unknown";
+
   // If nonce and root match, the bridge is synced — regardless of data age.
   if (source.nonce === destination.nonce && source.root === destination.root) {
     return "synced";
@@ -73,14 +75,20 @@ export function isDataStale(lastUpdatedAt: string, now = new Date()): boolean {
 export function computeDashboardSummary(
   directions: DirectionalBridgeStatus[]
 ): BridgeDashboardSummary {
-  const opCounts: Record<OperationStatus, number> = { synced: 0, pending: 0, delayed: 0 };
+  const opCounts: Record<OperationStatus, number> = {
+    synced: 0,
+    pending: 0,
+    delayed: 0,
+    root_mismatch: 0,
+    unknown: 0,
+  };
   const idxCounts: Record<IndexerStatus, number> = { fresh: 0, lagging: 0, unknown: 0 };
 
   let latestUpdate = "";
   for (const d of directions) {
     opCounts[d.operationStatus]++;
     idxCounts[d.indexerStatus]++;
-    if (!latestUpdate || d.lastUpdatedAt > latestUpdate) {
+    if (d.lastUpdatedAt && (!latestUpdate || d.lastUpdatedAt > latestUpdate)) {
       latestUpdate = d.lastUpdatedAt;
     }
   }
@@ -89,11 +97,11 @@ export function computeDashboardSummary(
     total: directions.length,
     synced: opCounts.synced,
     pending: opCounts.pending,
-    delayed: opCounts.delayed,
+    delayed: opCounts.delayed + opCounts.root_mismatch,
     fresh: idxCounts.fresh,
     lagging: idxCounts.lagging,
     indexerUnknown: idxCounts.unknown,
-    lastRefreshedAt: latestUpdate || new Date().toISOString(),
+    lastRefreshedAt: latestUpdate || undefined,
   };
 }
 
@@ -110,7 +118,7 @@ export function buildDashboardData(directions: DirectionalBridgeStatus[]): Bridg
   >();
 
   for (const d of directions) {
-    const key = d.tokenSymbol ? `token-${d.tokenSymbol.toLowerCase()}` : d.bridgeFamily;
+    const key = d.bridgeFamily === "token" ? (d.tokenPairId ?? d.id) : d.bridgeFamily;
     const existing = groupMap.get(key);
     if (existing) {
       existing.dirs.push(d);

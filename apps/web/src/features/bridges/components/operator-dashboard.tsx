@@ -144,7 +144,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
                 <span className="text-muted-foreground text-xs">{row.assetLabel}</span>
               </div>
               <div className="flex shrink-0 items-center gap-4">
-                {row.lag !== 0 && (
+                {row.lag !== undefined && row.lag !== 0 && (
                   <span className="text-muted-foreground font-mono text-xs">
                     lag: <span className="font-semibold text-red-400">{Math.abs(row.lag)}</span>
                   </span>
@@ -278,13 +278,14 @@ function DashboardFilters({
 }
 
 // ─── Lag display ──────────────────────────────────────────
-function LagCell({ lag, status }: { lag: number; status: string }) {
+function LagCell({ lag, status }: { lag?: number; status: string }) {
+  if (lag === undefined) return <span>Unavailable</span>;
   const absLag = Math.abs(lag);
   if (absLag === 0) {
     return <span className="font-mono text-sm text-emerald-500">0</span>;
   }
   let color = "text-amber-400";
-  if (status === "delayed" || absLag > 5) color = "text-red-400";
+  if (status === "delayed" || status === "root_mismatch") color = "text-red-400";
   else if (status === "pending") color = "text-blue-400";
   return <span className={`${color} font-mono text-sm font-semibold`}>{absLag}</span>;
 }
@@ -357,10 +358,10 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
                 <TypeBadge type={row.bridgeTypeLabel} />
               </TableCell>
               <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.sourceNonce.toLocaleString("en-US")}
+                {row.sourceNonce?.toLocaleString("en-US") ?? "Unavailable"}
               </TableCell>
               <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.destinationNonce.toLocaleString("en-US")}
+                {row.destinationNonce?.toLocaleString("en-US") ?? "Unavailable"}
               </TableCell>
               <TableCell className="text-right">
                 <LagCell lag={row.lag} status={row.operationStatus} />

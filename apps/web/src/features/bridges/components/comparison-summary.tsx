@@ -12,6 +12,7 @@ const COMPARISON_CONFIG: Record<
   nonce_mismatch: { label: "Nonce mismatch", variant: "destructive" },
   root_mismatch: { label: "Root mismatch", variant: "destructive" },
   nonce_and_root_mismatch: { label: "Nonce and root mismatch", variant: "destructive" },
+  unavailable: { label: "Comparison unavailable", variant: "secondary" },
   data_stale: { label: "Data stale", variant: "warning" },
 };
 

@@ -25,6 +25,7 @@ export function BridgeSideStatePanel({ label, state }: BridgeSideStatePanelProps
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
+    if (!state.root) return;
     const ok = await copyToClipboard(state.root);
     if (ok) {
       setCopied(true);
@@ -45,25 +46,27 @@ export function BridgeSideStatePanel({ label, state }: BridgeSideStatePanelProps
           <span className="font-mono tabular-nums" title={state.root}>
             {shortenHash(state.root)}
           </span>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer rounded p-0.5 text-xs transition-colors"
-            aria-label={`Copy root hash ${state.root}`}
-          >
-            {copied ? "✓" : "⎘"}
-          </button>
+          {state.root !== undefined && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer rounded p-0.5 text-xs transition-colors"
+              aria-label={`Copy root hash ${state.root}`}
+            >
+              {copied ? "✓" : "⎘"}
+            </button>
+          )}
         </dd>
 
-        {state.blockNumber !== undefined && (
-          <>
-            <dt className="text-muted-foreground">Block</dt>
-            <dd className="font-mono tabular-nums">{formatBlockNumber(state.blockNumber)}</dd>
-          </>
-        )}
+        <dt className="text-muted-foreground">Block</dt>
+        <dd className="font-mono tabular-nums">
+          {state.blockNumber === undefined ? "Unavailable" : formatBlockNumber(state.blockNumber)}
+        </dd>
 
-        <dt className="text-muted-foreground">Updated</dt>
-        <dd title={formatTimestamp(state.updatedAt)}>{relativeTime(state.updatedAt)}</dd>
+        <dt className="text-muted-foreground">Observed</dt>
+        <dd title={formatTimestamp(state.updatedAt)}>
+          {state.updatedAt ? relativeTime(state.updatedAt) : "Unavailable"}
+        </dd>
       </dl>
     </div>
   );

@@ -33,7 +33,8 @@ export function getDirectionLabel(sourceChain: ChainId, destinationChain: ChainI
  * Shorten a hex root/hash string for display.
  * Example: "0xabcdef1234567890abcd" → "0xabcd…90ab"
  */
-export function shortenHash(hash: string, prefixLen = 6, suffixLen = 4): string {
+export function shortenHash(hash: string | undefined, prefixLen = 6, suffixLen = 4): string {
+  if (hash === undefined) return "Unavailable";
   if (hash.length <= prefixLen + suffixLen + 2) return hash;
   return `${hash.slice(0, prefixLen)}…${hash.slice(-suffixLen)}`;
 }
@@ -78,6 +79,8 @@ export function relativeTime(iso: string | undefined, now = new Date()): string 
 
 /** Operation status display text. */
 const OPERATION_STATUS_LABELS: Record<OperationStatus, string> = {
+  root_mismatch: "Root mismatch",
+  unknown: "Sync unknown",
   synced: "Synced",
   pending: "Pending",
   delayed: "Delayed",
@@ -107,8 +110,8 @@ export function getBridgeSlug(family: string, tokenSymbol?: string): string {
 }
 
 /** Format a nonce number for display. */
-export function formatNonce(nonce: number): string {
-  return nonce.toLocaleString("en-US");
+export function formatNonce(nonce: number | undefined): string {
+  return nonce?.toLocaleString("en-US") ?? "Unavailable";
 }
 
 /** Format a block number for display. */

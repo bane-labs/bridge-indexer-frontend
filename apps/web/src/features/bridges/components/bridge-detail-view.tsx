@@ -97,7 +97,11 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
   const directionLabel = getDirectionLabel(status.sourceChain, status.destinationChain);
   const srcLabel = getChainLabel(status.sourceChain);
   const dstLabel = getChainLabel(status.destinationChain);
-  const lag = status.source.nonce - status.destination.nonce;
+  const lag =
+    status.deltaNonce ??
+    (status.source.nonce !== undefined && status.destination.nonce !== undefined
+      ? status.source.nonce - status.destination.nonce
+      : undefined);
   const rootMatch = status.source.root === status.destination.root;
 
   return (
@@ -135,7 +139,11 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 Nonce
               </span>
-              <NonceLag lag={lag} syncStatus={status.operationStatus} />
+              {lag === undefined ? (
+                "Unavailable"
+              ) : (
+                <NonceLag lag={lag} syncStatus={status.operationStatus} />
+              )}
             </div>
             <div className="text-right">
               <div className="font-mono text-base font-semibold tabular-nums">
@@ -157,7 +165,11 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 State Root
               </span>
-              <RootMatchBadge match={rootMatch} />
+              {status.source.root === undefined || status.destination.root === undefined ? (
+                "Unavailable"
+              ) : (
+                <RootMatchBadge match={rootMatch} />
+              )}
             </div>
             <div
               className="text-foreground/80 text-right font-mono text-xs tabular-nums"

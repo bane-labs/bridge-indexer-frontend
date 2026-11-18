@@ -72,6 +72,10 @@ export interface BackendDirectionalInstanceSync {
   delta_nonce?: number;
   src_nonce?: number;
   dst_nonce?: number;
+  src_block_number?: number;
+  dst_block_number?: number;
+  src_observed_at?: string;
+  dst_observed_at?: string;
   src_root?: string;
   dst_root?: string;
   reason: BackendDirectionalSyncReason;
