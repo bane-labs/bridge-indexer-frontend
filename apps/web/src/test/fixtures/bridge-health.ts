@@ -1,7 +1,7 @@
 import type {
-  BackendOperationalHealth,
-  BackendLegacyHealth,
   BackendDirectionalInstanceSync,
+  BackendLegacyHealth,
+  BackendOperationalHealth,
 } from "@/features/bridges/types/backend-api";
 
 export const startupHealth: BackendOperationalHealth = {

@@ -7,7 +7,6 @@ import { useApiClient } from "@/lib/api/hooks";
 import {
   fetchAllBridgeOperationsViaClient,
   fetchSyncInstancesViaClient,
-  fetchIndexerStateViaClient,
 } from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
 import {
@@ -107,10 +106,9 @@ export function useBridgeHistory(slug: string) {
         return null;
       }
 
-      const [operations, syncInstances, indexerState] = await Promise.all([
+      const [operations, syncInstances] = await Promise.all([
         fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
         fetchSyncInstancesViaClient(api),
-        fetchIndexerStateViaClient(api),
       ]);
 
       const contractsForTokenSymbol =
@@ -130,8 +128,7 @@ export function useBridgeHistory(slug: string) {
             (parsed.bridgeFamily !== "token" ||
               resolvedSyncInstanceTokenSymbol(instance)?.toLowerCase() ===
                 parsed.tokenSymbol?.toLowerCase())
-        ),
-        indexerState
+        )
       );
 
       return { history, statuses };

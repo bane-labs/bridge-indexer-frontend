@@ -21,10 +21,9 @@ const instance: BackendDirectionalInstanceSync = {
   dst_block_number: 88,
   dst_observed_at: "2026-11-18T10:00:00Z",
 };
-const missingIndexers = { neo_n3: null, neo_x: null };
 
 test("maps each side's observations and preserves source-ahead without guessing relay age", () => {
-  const [direction] = mapSyncInstancesToStatuses([instance], missingIndexers);
+  const [direction] = mapSyncInstancesToStatuses([instance]);
 
   expect(direction?.source).toMatchObject({
     nonce: 10,
@@ -41,30 +40,27 @@ test("maps each side's observations and preserves source-ahead without guessing 
 });
 
 test("keeps partial observations and groups token directions by contract pair", () => {
-  const directions = mapSyncInstancesToStatuses(
-    [
-      instance,
-      {
-        ...instance,
-        id: "token-reverse",
-        src_chain: "neo_x",
-        dst_chain: "neo_n3",
-        src_token: "x-a",
-        dst_token: "n3-a",
-      },
-      {
-        ...instance,
-        id: "another-token",
-        dst_token: "x-b",
-        dst_nonce: undefined,
-        dst_block_number: undefined,
-        dst_observed_at: undefined,
-        status: "unknown",
-        reason: "MISSING_STATE",
-      },
-    ],
-    missingIndexers
-  );
+  const directions = mapSyncInstancesToStatuses([
+    instance,
+    {
+      ...instance,
+      id: "token-reverse",
+      src_chain: "neo_x",
+      dst_chain: "neo_n3",
+      src_token: "x-a",
+      dst_token: "n3-a",
+    },
+    {
+      ...instance,
+      id: "another-token",
+      dst_token: "x-b",
+      dst_nonce: undefined,
+      dst_block_number: undefined,
+      dst_observed_at: undefined,
+      status: "unknown",
+      reason: "MISSING_STATE",
+    },
+  ]);
 
   expect(directions[2]?.destination).toEqual({});
   expect(directions[2]?.operationStatus).toBe("unknown");
@@ -73,17 +69,7 @@ test("keeps partial observations and groups token directions by contract pair", 
   ]);
 });
 
-test("a checkpoint syncing flag cannot establish indexer freshness", () => {
-  const checkpoint = {
-    chain: "neo_n3",
-    last_block_height: 123,
-    last_block_hash: "0xabc",
-    is_syncing: true,
-    updated_at: "2026-11-19T10:00:00Z",
-  };
-  const [direction] = mapSyncInstancesToStatuses([instance], {
-    neo_n3: checkpoint,
-    neo_x: { ...checkpoint, chain: "neo_x" },
-  });
+test("freshness remains unknown without progress observations", () => {
+  const [direction] = mapSyncInstancesToStatuses([instance]);
   expect(direction?.indexerStatus).toBe("unknown");
 });

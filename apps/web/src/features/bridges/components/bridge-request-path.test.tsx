@@ -1,5 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { rest } from "msw";
+import nodeFetch, { Headers as NodeHeaders } from "node-fetch";
+import { URL as NodeURL } from "url";
 
 import { renderWithProviders, server } from "@/test";
 import { startupHealth, legacyBridgeHealth, detailSync } from "@/test/fixtures/bridge-health";
@@ -9,7 +11,6 @@ import { BridgeDashboardClient } from "./bridge-dashboard-client";
 import { BridgeDetailView } from "./bridge-detail-view";
 
 // MSW v1 intercepts Node's HTTP transport rather than the native fetch transport.
-const nodeFetch = require("node-fetch");
 const originalFetch = global.fetch;
 const originalHeaders = global.Headers;
 const originalURL = global.URL;
@@ -24,16 +25,16 @@ afterAll(() => {
 });
 
 beforeAll(() => {
-  global.URL = require("url").URL;
-  global.fetch = nodeFetch;
-  global.Headers = nodeFetch.Headers;
+  global.URL = NodeURL as unknown as typeof global.URL;
+  global.fetch = nodeFetch as unknown as typeof global.fetch;
+  global.Headers = NodeHeaders as unknown as typeof global.Headers;
 });
 
 beforeEach(() => {
   process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api";
   server.use(
     rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([]))),
-    rest.get("*/indexer/state", (_req, res, ctx) => res(ctx.json({ neo_n3: null, neo_x: null }))),
+    rest.get("*/indexer/state", (_req, res, ctx) => res(ctx.status(503))),
     rest.get("*/operations", (_req, res, ctx) => res(ctx.json({ operations: [], total: 0 })))
   );
 });
@@ -64,12 +65,17 @@ function DetailRequest() {
   return data ? <BridgeDetailView {...data} /> : <p>Loading</p>;
 }
 
-test("detail cards render backend state even when operation history is empty", async () => {
+test("detail cards render backend state when history is empty and indexer state is unavailable", async () => {
   server.use(rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))));
   renderWithProviders(<DetailRequest />);
   expect(await screen.findByText("42")).toBeInTheDocument();
   expect(screen.getByText("0xsource")).toBeInTheDocument();
-  expect(screen.getByText("#123")).toBeInTheDocument();
+  expect(screen.getByText("Block #123")).toBeInTheDocument();
+  expect(screen.getByLabelText("Indexer: Unknown")).toBeInTheDocument();
+  expect(screen.getByText("Block Unavailable")).toBeInTheDocument();
+  expect(screen.getByText("Observed Unavailable")).toBeInTheDocument();
+  expect(screen.getByText("requested")).toBeInTheDocument();
+  expect(screen.getByText("relayed")).toBeInTheDocument();
   expect(screen.getByLabelText("Operation: Pending")).toBeInTheDocument();
   expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
   expect(screen.queryByLabelText("Operation: Delayed")).not.toBeInTheDocument();

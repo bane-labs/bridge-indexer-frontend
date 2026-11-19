@@ -1,5 +1,5 @@
 /**
- * Maps backend /sync/instances + /indexer/state + /health data
+ * Maps backend /sync/instances data
  * to frontend DirectionalBridgeStatus[] for dashboard display.
  *
  * This replaces the old approach of deriving sync status from operations.
@@ -12,7 +12,6 @@ import { resolveTokenSymbol } from "./bridge-operation-utils";
 import type {
   BackendDirectionalInstanceSync,
   BackendDirectionalSyncStatus,
-  BackendIndexerStateResponse,
 } from "../types/backend-api";
 import type {
   ChainId,
@@ -35,10 +34,7 @@ function mapOperationStatus(backendStatus: BackendDirectionalSyncStatus): Operat
 }
 
 /** Map a single backend sync instance to frontend DirectionalBridgeStatus. */
-function mapInstance(
-  sync: BackendDirectionalInstanceSync,
-  _indexerState: BackendIndexerStateResponse
-): DirectionalBridgeStatus {
+function mapInstance(sync: BackendDirectionalInstanceSync): DirectionalBridgeStatus {
   const sourceChain = sync.src_chain as ChainId;
   const destinationChain = sync.dst_chain as ChainId;
 
@@ -93,11 +89,10 @@ function mapInstance(
 }
 
 /**
- * Map backend sync instances + indexer state to frontend DirectionalBridgeStatus[].
+ * Map backend sync instances to frontend DirectionalBridgeStatus[].
  */
 export function mapSyncInstancesToStatuses(
-  syncInstances: BackendDirectionalInstanceSync[],
-  indexerState: BackendIndexerStateResponse
+  syncInstances: BackendDirectionalInstanceSync[]
 ): DirectionalBridgeStatus[] {
-  return syncInstances.map((sync) => mapInstance(sync, indexerState));
+  return syncInstances.map((sync) => mapInstance(sync));
 }

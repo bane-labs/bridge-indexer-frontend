@@ -13,7 +13,7 @@ import {
 } from "../lib/formatters";
 
 import { BridgeHistorySection } from "./bridge-history-section";
-import { SyncStatusBadge } from "./sync-status-badge";
+import { IndexerStatusBadge, SyncStatusBadge } from "./sync-status-badge";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
@@ -110,7 +110,10 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
         {/* Direction heading + status */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-foreground text-sm font-semibold">{directionLabel}</span>
-          <SyncStatusBadge status={status.operationStatus} />
+          <div className="flex gap-2">
+            <SyncStatusBadge status={status.operationStatus} />
+            <IndexerStatusBadge status={status.indexerStatus} />
+          </div>
         </div>
 
         <p className="text-muted-foreground text-xs leading-relaxed">
@@ -133,7 +136,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               <div className="font-mono text-base font-semibold tabular-nums">
                 {formatNonce(status.source.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+              <div className="text-muted-foreground text-[11px]">requested</div>
             </div>
             <div className="flex w-28 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -149,7 +152,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               <div className="font-mono text-base font-semibold tabular-nums">
                 {formatNonce(status.destination.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">operations relayed</div>
+              <div className="text-muted-foreground text-[11px]">relayed</div>
             </div>
           </div>
 
@@ -180,35 +183,22 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
           </div>
         </div>
 
-        {/* Block heights + last indexed timestamps */}
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="text-muted-foreground space-y-0.5">
-            {status.source.blockNumber !== undefined && (
+          {[status.source, status.destination].map((side, index) => (
+            <div key={index} className="text-muted-foreground space-y-0.5">
+              <p>{index === 0 ? "Source observation" : "Destination observation"}</p>
               <div>
                 Block{" "}
-                <span className="text-foreground/70 font-mono">
-                  {formatBlockNumber(status.source.blockNumber)}
-                </span>
+                {side.blockNumber === undefined
+                  ? "Unavailable"
+                  : formatBlockNumber(side.blockNumber)}
               </div>
-            )}
-            <div title={status.source.updatedAt}>
-              Observed {relativeTime(status.source.updatedAt)}
-            </div>
-          </div>
-          <div className="text-muted-foreground space-y-0.5 text-right">
-            {status.destination.blockNumber !== undefined && (
-              <div>
-                Block{" "}
-                <span className="text-foreground/70 font-mono">
-                  {formatBlockNumber(status.destination.blockNumber)}
-                </span>
+              <div title={side.updatedAt}>
+                Observed {side.updatedAt ? relativeTime(side.updatedAt) : "Unavailable"}
               </div>
-            )}
-            {status.destination.synthetic && <p>No destination execution required</p>}
-            <div title={status.destination.updatedAt}>
-              Observed {relativeTime(status.destination.updatedAt)}
+              {side.synthetic && <p>No destination execution required</p>}
             </div>
-          </div>
+          ))}
         </div>
       </CardContent>
     </Card>
