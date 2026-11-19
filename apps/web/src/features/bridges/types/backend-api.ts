@@ -74,6 +74,7 @@ export interface BackendDirectionalInstanceSync {
   dst_nonce?: number;
   src_block_number?: number;
   dst_block_number?: number;
+  dst_synthetic?: boolean;
   src_observed_at?: string;
   dst_observed_at?: string;
   src_root?: string;

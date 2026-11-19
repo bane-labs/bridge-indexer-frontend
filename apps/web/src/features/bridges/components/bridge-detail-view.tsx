@@ -192,7 +192,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               </div>
             )}
             <div title={status.source.updatedAt}>
-              Indexed {relativeTime(status.source.updatedAt)}
+              Observed {relativeTime(status.source.updatedAt)}
             </div>
           </div>
           <div className="text-muted-foreground space-y-0.5 text-right">
@@ -204,8 +204,9 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
                 </span>
               </div>
             )}
+            {status.destination.synthetic && <p>No destination execution required</p>}
             <div title={status.destination.updatedAt}>
-              Indexed {relativeTime(status.destination.updatedAt)}
+              Observed {relativeTime(status.destination.updatedAt)}
             </div>
           </div>
         </div>
@@ -224,7 +225,7 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
     );
   }
   const color =
-    syncStatus === "delayed" || absLag > 5
+    syncStatus === "delayed" || syncStatus === "root_mismatch"
       ? "bg-red-500/10 text-red-400"
       : "bg-amber-500/10 text-amber-400";
   return (

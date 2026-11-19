@@ -65,7 +65,7 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
         : undefined);
     const rootMatch = d.source.root !== undefined && d.source.root === d.destination.root;
     const comparison =
-      d.indexerStatus !== "fresh"
+      d.indexerStatus === "lagging"
         ? ("data_stale" as ComparisonSummary)
         : deriveComparisonSummary(d.source, d.destination);
 

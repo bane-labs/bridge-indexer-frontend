@@ -72,3 +72,18 @@ test("keeps partial observations and groups token directions by contract pair", 
     2, 1,
   ]);
 });
+
+test("a checkpoint syncing flag cannot establish indexer freshness", () => {
+  const checkpoint = {
+    chain: "neo_n3",
+    last_block_height: 123,
+    last_block_hash: "0xabc",
+    is_syncing: true,
+    updated_at: "2026-11-19T10:00:00Z",
+  };
+  const [direction] = mapSyncInstancesToStatuses([instance], {
+    neo_n3: checkpoint,
+    neo_x: { ...checkpoint, chain: "neo_x" },
+  });
+  expect(direction?.indexerStatus).toBe("unknown");
+});

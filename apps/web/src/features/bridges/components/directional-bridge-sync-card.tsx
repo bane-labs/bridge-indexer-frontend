@@ -32,7 +32,7 @@ export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCa
           <ComparisonSummaryBadge summary={direction.comparisonSummary} />
         </div>
         <CardTitle className="text-base">{directionLabel}</CardTitle>
-        {direction.indexerStatus !== "fresh" && <StaleIndicator reason={direction.staleReason} />}
+        {direction.indexerStatus === "lagging" && <StaleIndicator reason={direction.staleReason} />}
       </CardHeader>
 
       <CardContent className="space-y-4">

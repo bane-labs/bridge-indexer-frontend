@@ -63,6 +63,12 @@ export function BridgeSideStatePanel({ label, state }: BridgeSideStatePanelProps
           {state.blockNumber === undefined ? "Unavailable" : formatBlockNumber(state.blockNumber)}
         </dd>
 
+        {state.synthetic && (
+          <>
+            <dt className="text-muted-foreground">Observation</dt>
+            <dd>No destination execution required</dd>
+          </>
+        )}
         <dt className="text-muted-foreground">Observed</dt>
         <dd title={formatTimestamp(state.updatedAt)}>
           {state.updatedAt ? relativeTime(state.updatedAt) : "Unavailable"}

@@ -12,7 +12,6 @@ import { resolveTokenSymbol } from "./bridge-operation-utils";
 import type {
   BackendDirectionalInstanceSync,
   BackendDirectionalSyncStatus,
-  BackendIndexerState,
   BackendIndexerStateResponse,
 } from "../types/backend-api";
 import type {
@@ -35,23 +34,13 @@ function mapOperationStatus(backendStatus: BackendDirectionalSyncStatus): Operat
   }
 }
 
-/** Map backend indexer state to indexer status (data freshness). */
-function mapIndexerStatus(state: BackendIndexerState | null): IndexerStatus {
-  if (!state) return "unknown";
-  if (state.is_syncing) return "lagging";
-  return "fresh";
-}
-
 /** Map a single backend sync instance to frontend DirectionalBridgeStatus. */
 function mapInstance(
   sync: BackendDirectionalInstanceSync,
-  indexerState: BackendIndexerStateResponse
+  _indexerState: BackendIndexerStateResponse
 ): DirectionalBridgeStatus {
   const sourceChain = sync.src_chain as ChainId;
   const destinationChain = sync.dst_chain as ChainId;
-
-  const sourceIndexer = sourceChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
-  const destIndexer = destinationChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
 
   const lastUpdatedAt = [sync.src_observed_at, sync.dst_observed_at]
     .filter((timestamp): timestamp is string => timestamp !== undefined)
@@ -72,10 +61,8 @@ function mapInstance(
       : undefined;
 
   const operationStatus = mapOperationStatus(sync.status);
-  const indexerStatus =
-    sourceIndexer?.is_syncing || destIndexer?.is_syncing
-      ? "lagging"
-      : mapIndexerStatus(sourceIndexer && destIndexer ? sourceIndexer : null);
+  // is_syncing is written during normal indexing and cannot establish lag.
+  const indexerStatus: IndexerStatus = "unknown";
 
   return {
     id: sync.id,
@@ -91,6 +78,7 @@ function mapInstance(
       updatedAt: sync.src_observed_at,
     },
     destination: {
+      synthetic: sync.dst_synthetic,
       nonce: sync.dst_nonce,
       root: sync.dst_root,
       blockNumber: sync.dst_block_number,

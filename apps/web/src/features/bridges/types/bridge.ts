@@ -1,4 +1,4 @@
-import type { BackendOperationalHealth } from "./backend-api";
+import type { BackendOperationalHealth, BackendLegacyHealth } from "./backend-api";
 
 /** Chain identifiers for the bridge network. */
 export type ChainId = "neo_n3" | "neo_x";
@@ -23,6 +23,7 @@ export type OperationStatus = "synced" | "pending" | "delayed" | "root_mismatch"
 
 /** State snapshot for one side (source or destination) of a bridge. */
 export interface BridgeSideState {
+  synthetic?: boolean;
   nonce?: number;
   root?: string;
   blockNumber?: number;
@@ -77,7 +78,7 @@ export interface BridgeDashboardSummary {
   /** Instances where indexer state cannot be determined. */
   indexerUnknown: number;
   lastRefreshedAt?: string;
-  health?: BackendOperationalHealth | "unavailable" | "failed";
+  health?: BackendOperationalHealth | BackendLegacyHealth | "unavailable" | "failed";
 }
 
 /** Complete dashboard data response. */

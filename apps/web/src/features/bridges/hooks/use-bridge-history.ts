@@ -7,13 +7,15 @@ import { useApiClient } from "@/lib/api/hooks";
 import {
   fetchAllBridgeOperationsViaClient,
   fetchSyncInstancesViaClient,
+  fetchIndexerStateViaClient,
 } from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
 import {
   collectTokenContractsForSymbol,
   operationMatchesTokenSlug,
+  resolvedSyncInstanceTokenSymbol,
 } from "../lib/bridge-token-matching";
-import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
+import { mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
 
 import type { BackendBridgeOperation } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
@@ -22,7 +24,7 @@ type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
 interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
-  statuses: ReturnType<typeof mapOperationsToDirectionalStatuses>;
+  statuses: ReturnType<typeof mapSyncInstancesToStatuses>;
 }
 
 function buildRows(
@@ -74,10 +76,6 @@ function mapOperationsToHistory(
     return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
   });
 
-  if (!filtered.length) {
-    return null;
-  }
-
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
@@ -109,9 +107,10 @@ export function useBridgeHistory(slug: string) {
         return null;
       }
 
-      const [operations, syncInstances] = await Promise.all([
+      const [operations, syncInstances, indexerState] = await Promise.all([
         fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
         fetchSyncInstancesViaClient(api),
+        fetchIndexerStateViaClient(api),
       ]);
 
       const contractsForTokenSymbol =
@@ -124,13 +123,15 @@ export function useBridgeHistory(slug: string) {
         return null;
       }
 
-      const statuses = mapOperationsToDirectionalStatuses(
-        operations.filter((op) => {
-          if (history.bridgeFamily !== "token" || !history.tokenSymbol) {
-            return true;
-          }
-          return operationMatchesTokenSlug(op, history.tokenSymbol, contractsForTokenSymbol);
-        })
+      const statuses = mapSyncInstancesToStatuses(
+        syncInstances.filter(
+          (instance) =>
+            instance.bridge_type === parsed.bridgeFamily &&
+            (parsed.bridgeFamily !== "token" ||
+              resolvedSyncInstanceTokenSymbol(instance)?.toLowerCase() ===
+                parsed.tokenSymbol?.toLowerCase())
+        ),
+        indexerState
       );
 
       return { history, statuses };

@@ -19,7 +19,7 @@ function enrichDirection(status: DirectionalBridgeStatus): DirectionalBridgeSync
 
   return {
     ...status,
-    comparisonSummary: status.indexerStatus !== "fresh" ? "data_stale" : comparison,
+    comparisonSummary: status.indexerStatus === "lagging" ? "data_stale" : comparison,
     staleReason,
   };
 }
