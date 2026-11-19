@@ -5,5 +5,5 @@ export function getOperationalHealth(
   response: BackendOverallHealth | undefined
 ): NonNullable<BridgeDashboardSummary["health"]> {
   if (response === undefined) return "failed";
-  return "overallStatus" in response ? response : "unavailable";
+  return response;
 }

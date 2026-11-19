@@ -1,4 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+
+import { renderWithProviders as render } from "@/test";
 
 import { getOperationalHealth } from "../lib/operational-health";
 import { OperationalHealthSummary } from "./operational-health-summary";
@@ -60,7 +62,7 @@ test("distinguishes the legacy response from a failed request", () => {
     />
   );
 
-  expect(screen.getByText("Operational health is unavailable.")).toBeInTheDocument();
+  expect(screen.getByText("Healthy")).toBeInTheDocument();
   rerender(<OperationalHealthSummary health={getOperationalHealth(undefined)} />);
   expect(screen.getByText("Could not load bridge health.")).toBeInTheDocument();
 });

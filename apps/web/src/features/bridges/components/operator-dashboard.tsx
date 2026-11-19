@@ -406,7 +406,11 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
       if (statusFilter === "lagging") {
         rows = rows.filter((r) => r.indexerStatus === "lagging");
       } else {
-        rows = rows.filter((r) => r.operationStatus === statusFilter);
+        rows = rows.filter((r) =>
+          statusFilter === "delayed"
+            ? r.operationStatus === "delayed" || r.operationStatus === "root_mismatch"
+            : r.operationStatus === statusFilter
+        );
       }
     }
 
