@@ -18,7 +18,16 @@ export const startupHealth: BackendOperationalHealth = {
 export const legacyBridgeHealth: BackendLegacyHealth = {
   status: "healthy",
   updated_at: "2026-11-19T10:00:00Z",
-  bridges: [],
+  bridges: [
+    { bridge_type: "native", status: "healthy", deposits_paused: false, withdrawals_paused: false },
+    { bridge_type: "token", status: "healthy", deposits_paused: false, withdrawals_paused: false },
+    {
+      bridge_type: "message",
+      status: "healthy",
+      deposits_paused: false,
+      withdrawals_paused: false,
+    },
+  ],
 };
 export const detailSync: BackendDirectionalInstanceSync = {
   id: "ndmeme-forward",

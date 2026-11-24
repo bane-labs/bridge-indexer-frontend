@@ -1,5 +1,6 @@
 import { formatTimestamp, getDirectionLabel } from "../lib/formatters";
 
+import type { BackendLegacyHealth } from "../types/backend-api";
 import type { BridgeDashboardSummary, ChainId } from "../types/bridge";
 
 const VERDICTS = {
@@ -11,6 +12,9 @@ const VERDICTS = {
 };
 
 export function OperationalHealthSummary({ health }: { health: BridgeDashboardSummary["health"] }) {
+  if (health && typeof health !== "string" && "status" in health) {
+    return <LegacyPauseSummary health={health} />;
+  }
   return (
     <section
       aria-labelledby="operational-health-heading"
@@ -23,22 +27,6 @@ export function OperationalHealthSummary({ health }: { health: BridgeDashboardSu
         <p>Could not load bridge health.</p>
       ) : !health || health === "unavailable" ? (
         <p>Operational health is unavailable.</p>
-      ) : "status" in health ? (
-        <>
-          <p className="font-medium">{VERDICTS[health.status]}</p>
-          <p>Bridge pause health. Operational checks are not available yet.</p>
-          <p className="text-muted-foreground text-sm">
-            Checked {formatTimestamp(health.updated_at)}
-          </p>
-          <ul aria-label="Bridge directions" className="text-sm">
-            {health.bridges.map((bridge) => (
-              <li key={bridge.bridge_type}>
-                {bridge.bridge_type} · N3 → Neo X {bridge.deposits_paused ? "Paused" : "Open"}
-                {" · "}Neo X → N3 {bridge.withdrawals_paused ? "Paused" : "Open"}
-              </li>
-            ))}
-          </ul>
-        </>
       ) : (
         <>
           <p className="font-medium">{VERDICTS[health.overallStatus]}</p>
@@ -80,13 +68,83 @@ export function OperationalHealthSummary({ health }: { health: BridgeDashboardSu
                       ? "Pause state unavailable"
                       : direction.paused
                         ? "Paused"
-                        : "Open"}
+                        : "Unpaused"}
                   </li>
                 ))
               )}
             </ul>
           )}
         </>
+      )}
+    </section>
+  );
+}
+
+function LegacyPauseSummary({ health }: { health: BackendLegacyHealth }) {
+  const pausedDirections = health.bridges
+    .flatMap((bridge) => [
+      {
+        bridgeType: bridge.bridge_type,
+        source: "neo_n3" as const,
+        destination: "neo_x" as const,
+        paused: bridge.deposits_paused,
+      },
+      {
+        bridgeType: bridge.bridge_type,
+        source: "neo_x" as const,
+        destination: "neo_n3" as const,
+        paused: bridge.withdrawals_paused,
+      },
+    ])
+    .filter((direction) => direction.paused);
+
+  let label = "Pause state unavailable";
+  if (health.bridges.length > 0) {
+    label =
+      pausedDirections.length === 0
+        ? "All directions unpaused"
+        : `${pausedDirections.length} direction${pausedDirections.length === 1 ? "" : "s"} paused`;
+  }
+
+  return (
+    <section
+      aria-labelledby="bridge-pause-heading"
+      className="bg-card rounded-lg border px-4 py-3 text-sm"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 id="bridge-pause-heading" className="text-muted-foreground">
+            Bridge pauses
+          </h2>
+          <p
+            className={
+              pausedDirections.length > 0 ? "text-warning-text font-medium" : "font-medium"
+            }
+          >
+            {label}
+          </p>
+        </div>
+        {health.updated_at && (
+          <time
+            dateTime={health.updated_at}
+            title={health.updated_at}
+            className="text-muted-foreground text-xs"
+          >
+            Checked {formatTimestamp(health.updated_at)}
+          </time>
+        )}
+      </div>
+      {pausedDirections.length > 0 && (
+        <ul aria-label="Paused bridge directions" className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
+          {pausedDirections.map((direction) => (
+            <li key={`${direction.bridgeType}-${direction.source}`}>
+              <span className="capitalize">{direction.bridgeType}</span>
+              {" · "}
+              {getDirectionLabel(direction.source, direction.destination)}
+              {" · Paused"}
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
