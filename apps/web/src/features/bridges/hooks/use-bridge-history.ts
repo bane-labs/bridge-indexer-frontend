@@ -11,6 +11,8 @@ import {
 import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
 import {
   collectTokenContractsForSymbol,
+  getTokenPairId,
+  normalizeTokenContractAddress,
   operationMatchesTokenSlug,
   resolvedSyncInstanceTokenSymbol,
 } from "../lib/bridge-token-matching";
@@ -34,7 +36,9 @@ function buildRows(
     .filter((op) => op.direction === direction)
     .sort((a, b) => b.nonce - a.nonce)
     .map((op) => ({
-      id: `${op.bridge_type}-${direction}-${op.nonce}`,
+      id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
+        ":"
+      ),
       nonce: op.nonce,
       root: op.root ?? "0x0",
       sourceTxHash: op.source_tx_hash,
@@ -56,40 +60,32 @@ function buildRows(
 function mapOperationsToHistory(
   slug: string,
   operations: BackendBridgeOperation[],
-  contractsForTokenSymbol: Set<string>
+  tokenSymbol?: string,
+  tokenPairId?: string,
+  combined = false
 ): BridgeHistoryPageData | null {
   const parsed = parseBridgeSlug(slug);
   if (!parsed) {
     return null;
   }
 
-  const filtered = operations.filter((op) => {
-    if (parsed.bridgeFamily !== op.bridge_type) {
-      return false;
-    }
-
-    if (parsed.bridgeFamily !== "token" || !parsed.tokenSymbol) {
-      return true;
-    }
-
-    return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
-  });
-
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
-    tokenSymbol: parsed.tokenSymbol,
-    label: buildBridgeLabel(parsed.bridgeFamily, parsed.tokenSymbol),
+    tokenSymbol,
+    tokenPairId,
+    label:
+      buildBridgeLabel(parsed.bridgeFamily, tokenSymbol) + (combined ? " (all token pairs)" : ""),
     directions: [
       {
         sourceChain: "neo_n3",
         destinationChain: "neo_x",
-        rows: buildRows(filtered, "deposit"),
+        rows: buildRows(operations, "deposit"),
       },
       {
         sourceChain: "neo_x",
         destinationChain: "neo_n3",
-        rows: buildRows(filtered, "withdrawal"),
+        rows: buildRows(operations, "withdrawal"),
       },
     ],
   };
@@ -116,20 +112,58 @@ export function useBridgeHistory(slug: string) {
           ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
           : new Set<string>();
 
-      const history = mapOperationsToHistory(slug, operations, contractsForTokenSymbol);
-      if (!history) {
-        return null;
-      }
-
-      const statuses = mapSyncInstancesToStatuses(
-        syncInstances.filter(
-          (instance) =>
-            instance.bridge_type === parsed.bridgeFamily &&
-            (parsed.bridgeFamily !== "token" ||
-              resolvedSyncInstanceTokenSymbol(instance)?.toLowerCase() ===
-                parsed.tokenSymbol?.toLowerCase())
-        )
+      const selectedInstances = syncInstances.filter((instance) => {
+        if (instance.bridge_type !== parsed.bridgeFamily) return false;
+        if (parsed.bridgeFamily !== "token") return true;
+        if (parsed.tokenPairId) {
+          return (
+            getTokenPairId(instance.src_chain, instance.src_token, instance.dst_token) ===
+            parsed.tokenPairId
+          );
+        }
+        if (parsed.instanceId) return instance.id === parsed.instanceId;
+        return (
+          resolvedSyncInstanceTokenSymbol(instance)?.toLowerCase() ===
+          parsed.tokenSymbol?.toLowerCase()
+        );
+      });
+      const selectedOperations = operations.filter((op) => {
+        if (op.bridge_type !== parsed.bridgeFamily) return false;
+        if (parsed.bridgeFamily !== "token") return true;
+        if (parsed.tokenPairId) {
+          return (
+            getTokenPairId(op.source_chain, op.token_contract, op.dest_token_contract) ===
+            parsed.tokenPairId
+          );
+        }
+        if (parsed.instanceId) {
+          return selectedInstances.some(
+            (instance) =>
+              instance.src_chain === op.source_chain &&
+              instance.dst_chain === op.destination_chain &&
+              normalizeTokenContractAddress(instance.src_token) ===
+                normalizeTokenContractAddress(op.token_contract) &&
+              normalizeTokenContractAddress(instance.dst_token) ===
+                normalizeTokenContractAddress(op.dest_token_contract)
+          );
+        }
+        return Boolean(
+          parsed.tokenSymbol &&
+            operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol)
+        );
+      });
+      const statuses = mapSyncInstancesToStatuses(selectedInstances);
+      const pairCount = new Set(statuses.map((status) => status.tokenPairId ?? status.id)).size;
+      const tokenSymbol =
+        parsed.tokenSymbol ?? selectedInstances.map(resolvedSyncInstanceTokenSymbol).find(Boolean);
+      const history = mapOperationsToHistory(
+        slug,
+        selectedOperations,
+        tokenSymbol,
+        parsed.tokenPairId,
+        Boolean(parsed.tokenSymbol && pairCount > 1)
       );
+      if (!history) return null;
 
       return { history, statuses };
     },

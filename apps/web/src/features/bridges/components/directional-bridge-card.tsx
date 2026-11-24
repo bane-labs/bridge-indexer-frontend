@@ -15,7 +15,12 @@ interface DirectionalBridgeCardProps {
 
 export function DirectionalBridgeCard({ bridge }: DirectionalBridgeCardProps) {
   const directionLabel = getDirectionLabel(bridge.sourceChain, bridge.destinationChain);
-  const slug = getBridgeSlug(bridge.bridgeFamily, bridge.tokenSymbol);
+  const slug = getBridgeSlug(
+    bridge.bridgeFamily,
+    bridge.tokenSymbol,
+    bridge.tokenPairId,
+    bridge.id
+  );
 
   let bridgeLabel: string;
   if (bridge.tokenSymbol) {

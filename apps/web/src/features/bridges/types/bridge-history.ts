@@ -36,5 +36,6 @@ export interface BridgeHistoryPageData {
   bridgeFamily: BridgeFamily;
   tokenSymbol?: string;
   label: string;
+  tokenPairId?: string;
   directions: [BridgeDirectionHistory, BridgeDirectionHistory];
 }

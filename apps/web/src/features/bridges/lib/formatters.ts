@@ -101,13 +101,7 @@ export function getIndexerStatusLabel(status: IndexerStatus): string {
   return INDEXER_STATUS_LABELS[status];
 }
 
-/** Generate a bridge slug from family + optional token symbol. */
-export function getBridgeSlug(family: string, tokenSymbol?: string): string {
-  if (tokenSymbol) {
-    return `token-${tokenSymbol.toLowerCase()}`;
-  }
-  return family;
-}
+export { getBridgeSlug } from "./bridge-slugs";
 
 /** Format a nonce number for display. */
 export function formatNonce(nonce: number | undefined): string {

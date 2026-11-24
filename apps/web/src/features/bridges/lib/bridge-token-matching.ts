@@ -11,6 +11,18 @@ export function normalizeTokenContractAddress(addr?: string): string | null {
   return s.startsWith("0x") ? s : `0x${s}`;
 }
 
+/** Pair identity is always N3 token followed by Neo X token. */
+export function getTokenPairId(
+  sourceChain: string,
+  sourceToken?: string,
+  destinationToken?: string
+): string | undefined {
+  const src = normalizeTokenContractAddress(sourceToken)?.slice(2);
+  const dst = normalizeTokenContractAddress(destinationToken)?.slice(2);
+  if (!src || !dst || !/^[0-9a-f]+$/.test(src) || !/^[0-9a-f]+$/.test(dst)) return undefined;
+  return (sourceChain === "neo_n3" ? [src, dst] : [dst, src]).join(":");
+}
+
 /**
  * Resolve the display token ticker for a sync instance (aligned with sync-instance-mapper).
  */

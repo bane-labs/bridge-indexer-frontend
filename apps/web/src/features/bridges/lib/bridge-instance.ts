@@ -1,4 +1,5 @@
 import { deriveComparisonSummary } from "./bridge-comparison";
+import { getBridgeSlug } from "./bridge-slugs";
 import { getDirectionLabel } from "./formatters";
 
 import type {
@@ -69,7 +70,9 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
         ? ("data_stale" as ComparisonSummary)
         : deriveComparisonSummary(d.source, d.destination);
 
-    const assetLabel = d.tokenSymbol ?? (d.bridgeFamily === "native" ? "Native (GAS)" : "Message");
+    const assetLabel =
+      d.tokenSymbol ??
+      { token: "Unknown token", native: "Native (GAS)", message: "Message" }[d.bridgeFamily];
     const FAMILY_TYPE_LABELS: Record<BridgeFamily, string> = {
       token: "Token",
       native: "Native",
@@ -77,7 +80,7 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
     };
     const bridgeTypeLabel = FAMILY_TYPE_LABELS[d.bridgeFamily];
 
-    const slug = d.tokenSymbol ? `token-${d.tokenSymbol.toLowerCase()}` : d.bridgeFamily;
+    const slug = getBridgeSlug(d.bridgeFamily, d.tokenSymbol, d.tokenPairId, d.id);
 
     return {
       id: d.id,

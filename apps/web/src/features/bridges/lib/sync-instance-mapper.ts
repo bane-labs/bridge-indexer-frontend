@@ -7,7 +7,7 @@
  * on-chain bridge contract state.
  */
 
-import { resolveTokenSymbol } from "./bridge-operation-utils";
+import { getTokenPairId, resolvedSyncInstanceTokenSymbol } from "./bridge-token-matching";
 
 import type {
   BackendDirectionalInstanceSync,
@@ -42,19 +42,11 @@ function mapInstance(sync: BackendDirectionalInstanceSync): DirectionalBridgeSta
     .filter((timestamp): timestamp is string => timestamp !== undefined)
     .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
   const tokenPairId =
-    sync.bridge_type === "token" && sync.src_token && sync.dst_token
-      ? (sourceChain === "neo_n3"
-          ? [sync.src_token, sync.dst_token]
-          : [sync.dst_token, sync.src_token]
-        )
-          .join(":")
-          .toLowerCase()
+    sync.bridge_type === "token"
+      ? getTokenPairId(sourceChain, sync.src_token, sync.dst_token)
       : undefined;
 
-  const tokenSymbol =
-    sync.bridge_type === "token"
-      ? (sync.src_token_symbol ?? resolveTokenSymbol(sync.src_token ?? undefined))
-      : undefined;
+  const tokenSymbol = resolvedSyncInstanceTokenSymbol(sync);
 
   const operationStatus = mapOperationStatus(sync.status);
   // is_syncing is written during normal indexing and cannot establish lag.

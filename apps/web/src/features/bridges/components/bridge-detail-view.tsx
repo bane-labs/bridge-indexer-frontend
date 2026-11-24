@@ -68,6 +68,11 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
         </div>
 
         <p className="text-muted-foreground mt-1.5 font-mono text-sm">{context}</p>
+        {history.tokenPairId && (
+          <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+            N3 / Neo X contracts · {history.tokenPairId.replace(":", " / ")}
+          </p>
+        )}
       </header>
 
       {/* B. Sync summary cards for each direction */}

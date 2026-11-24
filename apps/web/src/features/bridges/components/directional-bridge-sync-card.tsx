@@ -19,7 +19,12 @@ interface DirectionalBridgeSyncCardProps {
 
 export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCardProps) {
   const directionLabel = getDirectionLabel(direction.sourceChain, direction.destinationChain);
-  const slug = getBridgeSlug(direction.bridgeFamily, direction.tokenSymbol);
+  const slug = getBridgeSlug(
+    direction.bridgeFamily,
+    direction.tokenSymbol,
+    direction.tokenPairId,
+    direction.id
+  );
 
   return (
     <Card className="gap-3">
