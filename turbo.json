@@ -5,6 +5,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["NEXT_PUBLIC_API_URL", "INDEXER_API_UPSTREAM"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {

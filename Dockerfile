@@ -28,6 +28,10 @@ RUN pnpm install --frozen-lockfile
 # Copy source files
 COPY . .
 
+# Next.js embeds the public API base and resolves rewrites during the build.
+ARG NEXT_PUBLIC_API_URL
+ARG INDEXER_API_UPSTREAM
+
 # Build the application
 RUN pnpm build --filter=@atlas/web
 
