@@ -32,11 +32,11 @@ import type {
   PageProps,
   UserTraits,
 } from "../types";
+import type {} from "@next/third-parties/google";
 
-// Extend window to include gtag
+// dataLayer is declared by @next/third-parties/google.
 declare global {
   interface Window {
-    dataLayer?: Object[];
     gtag: (...args: unknown[]) => void;
   }
 }

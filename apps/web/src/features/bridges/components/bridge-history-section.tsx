@@ -10,8 +10,8 @@ import {
   PaginationPrevious,
 } from "@atlas/ui";
 
-import { getChainLabel, getDirectionLabel } from "../lib/formatters";
 import { usePagination } from "../hooks/use-pagination";
+import { getChainLabel, getDirectionLabel } from "../lib/formatters";
 
 import { BridgeHistoryEmptyState } from "./bridge-history-empty-state";
 import { BridgeHistoryTable } from "./bridge-history-table";
