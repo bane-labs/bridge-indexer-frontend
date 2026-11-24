@@ -40,7 +40,7 @@ export function shortenHash(hash: string | undefined, prefixLen = 6, suffixLen =
 }
 
 /**
- * Format an ISO timestamp to a locale-appropriate string.
+ * Format an ISO timestamp in local time, including the timezone label.
  */
 export function formatTimestamp(iso: string | undefined): string {
   if (!iso) return "Unknown";
@@ -53,6 +53,7 @@ export function formatTimestamp(iso: string | undefined): string {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
+    timeZoneName: "short",
   });
 }
 

@@ -66,7 +66,7 @@ test("shows startup health with zero sync instances", async () => {
 test("shows the current backend verdict with zero sync instances", async () => {
   server.use(rest.get("*/health", (_req, res, ctx) => res(ctx.json(legacyBridgeHealth))));
   renderWithProviders(<BridgeDashboardClient />);
-  expect(await screen.findByText("Healthy")).toBeInTheDocument();
+  expect(await screen.findByText("All directions unpaused")).toBeInTheDocument();
 });
 
 test("shows a health request failure with zero sync instances", async () => {
@@ -134,7 +134,9 @@ test("health remains visible when sync fails", async () => {
     rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.status(503)))
   );
   renderWithProviders(<BridgeDashboardClient />);
-  expect(await screen.findByText("Healthy", {}, { timeout: 10000 })).toBeInTheDocument();
+  expect(
+    await screen.findByText("All directions unpaused", {}, { timeout: 10000 })
+  ).toBeInTheDocument();
   expect(screen.getByText(/could not load bridge sync state/i)).toBeInTheDocument();
 });
 
