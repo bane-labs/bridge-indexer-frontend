@@ -11,6 +11,8 @@ const OPERATION_CONFIG: Record<
   OperationStatus,
   { variant: "success" | "destructive" | "warning" | "info" | "secondary"; icon: string }
 > = {
+  root_mismatch: { variant: "destructive", icon: "✕" },
+  unknown: { variant: "secondary", icon: "?" },
   synced: { variant: "success", icon: "●" },
   pending: { variant: "info", icon: "↻" },
   delayed: { variant: "destructive", icon: "✕" },

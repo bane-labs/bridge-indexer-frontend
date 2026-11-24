@@ -26,6 +26,7 @@ import {
 import { buildDirectionSlug } from "../lib/bridge-slugs";
 import { relativeTime } from "../lib/formatters";
 
+import { OperationalHealthSummary } from "./operational-health-summary";
 import { OperationStatusBadge } from "./sync-status-badge";
 
 import type {
@@ -35,7 +36,7 @@ import type {
 } from "../types/bridge";
 
 // ─── Filter types ─────────────────────────────────────────
-type StatusFilter = "all" | "synced" | "pending" | "delayed" | "lagging";
+type StatusFilter = "all" | "synced" | "pending" | "delayed" | "unknown" | "lagging";
 type DirectionFilter = "all" | "neo_n3_to_neo_x" | "neo_x_to_neo_n3";
 type TypeFilter = "all" | "native" | "message" | "token";
 
@@ -44,6 +45,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "synced", label: "Synced" },
   { value: "pending", label: "Pending" },
   { value: "delayed", label: "Delayed" },
+  { value: "unknown", label: "Unknown" },
   { value: "lagging", label: "Indexer Lagging" },
 ];
 
@@ -93,33 +95,18 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Synced" value={summary.synced} colorClass="text-emerald-500" />
           <KpiCard label="Pending" value={summary.pending} colorClass="text-blue-400" />
           <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
+          <KpiCard label="Unknown" value={summary.unknown} />
         </div>
         <div className="flex items-center gap-3">
-          {summary.healthStatus && <HealthStatusIndicator status={summary.healthStatus} />}
           <span
             className="text-muted-foreground text-xs tabular-nums"
-            title={summary.lastRefreshedAt}
+            title={summary.lastObservedAt}
           >
-            Refreshed {relativeTime(summary.lastRefreshedAt)}
+            Latest bridge observation {relativeTime(summary.lastObservedAt)}
           </span>
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function HealthStatusIndicator({ status }: { status: "healthy" | "degraded" | "unhealthy" }) {
-  const config = {
-    healthy: { label: "Healthy", color: "text-emerald-500", dot: "bg-emerald-500" },
-    degraded: { label: "Degraded", color: "text-amber-400", dot: "bg-amber-400" },
-    unhealthy: { label: "Unhealthy", color: "text-red-400", dot: "bg-red-400" },
-  }[status];
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.color}`}>
-      <span className={`inline-block h-2 w-2 rounded-full ${config.dot}`} aria-hidden="true" />
-      {config.label}
-    </span>
   );
 }
 
@@ -150,7 +137,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
                 <span className="text-muted-foreground text-xs">{row.assetLabel}</span>
               </div>
               <div className="flex shrink-0 items-center gap-4">
-                {row.lag !== 0 && (
+                {row.lag !== undefined && row.lag !== 0 && (
                   <span className="text-muted-foreground font-mono text-xs">
                     lag: <span className="font-semibold text-red-400">{Math.abs(row.lag)}</span>
                   </span>
@@ -284,13 +271,14 @@ function DashboardFilters({
 }
 
 // ─── Lag display ──────────────────────────────────────────
-function LagCell({ lag, status }: { lag: number; status: string }) {
+function LagCell({ lag, status }: { lag?: number; status: string }) {
+  if (lag === undefined) return <span>Unavailable</span>;
   const absLag = Math.abs(lag);
   if (absLag === 0) {
     return <span className="font-mono text-sm text-emerald-500">0</span>;
   }
   let color = "text-amber-400";
-  if (status === "delayed" || absLag > 5) color = "text-red-400";
+  if (status === "delayed" || status === "root_mismatch") color = "text-red-400";
   else if (status === "pending") color = "text-blue-400";
   return <span className={`${color} font-mono text-sm font-semibold`}>{absLag}</span>;
 }
@@ -371,10 +359,10 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
                   <TypeBadge type={row.bridgeTypeLabel} />
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm tabular-nums">
-                  {row.sourceNonce.toLocaleString("en-US")}
+                  {row.sourceNonce?.toLocaleString("en-US") ?? "Unavailable"}
                 </TableCell>
                 <TableCell className="text-right font-mono text-sm tabular-nums">
-                  {row.destinationNonce.toLocaleString("en-US")}
+                  {row.destinationNonce?.toLocaleString("en-US") ?? "Unavailable"}
                 </TableCell>
                 <TableCell className="text-right">
                   <LagCell lag={row.lag} status={row.operationStatus} />
@@ -466,7 +454,11 @@ export function OperatorDashboard({ statuses, summary, chainLiveness }: Operator
       if (statusFilter === "lagging") {
         rows = rows.filter((r) => r.indexerStatus === "lagging");
       } else {
-        rows = rows.filter((r) => r.operationStatus === statusFilter);
+        rows = rows.filter((r) =>
+          statusFilter === "delayed"
+            ? r.operationStatus === "delayed" || r.operationStatus === "root_mismatch"
+            : r.operationStatus === statusFilter
+        );
       }
     }
 
@@ -485,6 +477,7 @@ export function OperatorDashboard({ statuses, summary, chainLiveness }: Operator
   return (
     <div className="space-y-6">
       {/* A. Top summary strip */}
+      <OperationalHealthSummary health={summary.health} />
       <SummaryStrip summary={summary} />
 
       {/* Chain indexer liveness */}

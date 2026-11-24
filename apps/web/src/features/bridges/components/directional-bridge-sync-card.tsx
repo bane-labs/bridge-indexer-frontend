@@ -4,8 +4,8 @@ import Link from "next/link";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui";
 
-import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 import { buildDirectionSlug } from "../lib/bridge-slugs";
+import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 
 import { BridgeSideStatePanel } from "./bridge-side-state-panel";
 import { ComparisonSummaryBadge } from "./comparison-summary";
@@ -20,7 +20,12 @@ interface DirectionalBridgeSyncCardProps {
 
 export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCardProps) {
   const directionLabel = getDirectionLabel(direction.sourceChain, direction.destinationChain);
-  const slug = getBridgeSlug(direction.bridgeFamily, direction.tokenSymbol);
+  const slug = getBridgeSlug(
+    direction.bridgeFamily,
+    direction.tokenSymbol,
+    direction.tokenPairId,
+    direction.id
+  );
   const directionSlug = buildDirectionSlug(direction.sourceChain);
 
   return (
@@ -34,7 +39,7 @@ export function DirectionalBridgeSyncCard({ direction }: DirectionalBridgeSyncCa
           <ComparisonSummaryBadge summary={direction.comparisonSummary} />
         </div>
         <CardTitle className="text-base">{directionLabel}</CardTitle>
-        {direction.indexerStatus !== "fresh" && <StaleIndicator reason={direction.staleReason} />}
+        {direction.indexerStatus === "lagging" && <StaleIndicator reason={direction.staleReason} />}
       </CardHeader>
 
       <CardContent className="space-y-4">

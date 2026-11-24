@@ -15,7 +15,8 @@ export type ComparisonSummary =
   | "nonce_mismatch"
   | "root_mismatch"
   | "nonce_and_root_mismatch"
-  | "data_stale";
+  | "data_stale"
+  | "unavailable";
 
 /** A bridge section grouping both directions for a single bridge. */
 export interface BridgeSyncSection {
@@ -23,7 +24,7 @@ export interface BridgeSyncSection {
   bridgeFamily: BridgeFamily;
   tokenSymbol?: string;
   title: string;
-  directions: [DirectionalBridgeSyncState, DirectionalBridgeSyncState];
+  directions: DirectionalBridgeSyncState[];
 }
 
 /** Complete data for the bridge state page. */

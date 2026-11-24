@@ -8,6 +8,13 @@ export function deriveComparisonSummary(
   source: BridgeSideState,
   destination: BridgeSideState
 ): ComparisonSummary {
+  if (
+    source.nonce === undefined ||
+    destination.nonce === undefined ||
+    !source.root?.trim() ||
+    !destination.root?.trim()
+  )
+    return "unavailable";
   const nonceMatch = source.nonce === destination.nonce;
   const rootMatch = source.root === destination.root;
 
@@ -24,6 +31,7 @@ const COMPARISON_LABELS: Record<ComparisonSummary, string> = {
   root_mismatch: "Root mismatch",
   nonce_and_root_mismatch: "Nonce and root mismatch",
   data_stale: "Data stale",
+  unavailable: "Comparison unavailable",
 };
 
 export function getComparisonLabel(summary: ComparisonSummary): string {

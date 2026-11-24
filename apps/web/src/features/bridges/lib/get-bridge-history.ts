@@ -1,6 +1,6 @@
 import { fetchAllBridgeOperations, fetchSyncInstances } from "./bridge-operations-api";
 import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "./bridge-slugs";
-import { collectTokenContractsForSymbol, operationMatchesTokenSlug } from "./bridge-token-matching";
+import { selectBridgeData } from "./bridge-token-matching";
 
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 import type { BridgeDirectionSlug } from "./bridge-slugs";
@@ -16,7 +16,9 @@ function buildRows(
     .sort((a, b) => b.nonce - a.nonce)
     .map((op) => {
       const base = {
-        id: `${op.bridge_type}-${direction}-${op.nonce}`,
+        id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
+          ":"
+        ),
         nonce: op.nonce,
         root: op.root ?? "0x0",
         sourceTxHash: op.source_tx_hash,
@@ -78,39 +80,23 @@ export async function getBridgeHistory(
     fetchSyncInstances(),
   ]);
 
-  const contractsForTokenSymbol =
-    parsed.bridgeFamily === "token" && parsed.tokenSymbol
-      ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
-      : new Set<string>();
-
-  const filtered = operations.filter((op) => {
-    if (parsed.bridgeFamily !== op.bridge_type) {
-      return false;
-    }
-
-    if (parsed.bridgeFamily !== "token" || !parsed.tokenSymbol) {
-      return true;
-    }
-
-    return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
-  });
-
-  if (!filtered.length) {
-    return null;
-  }
+  const selection = selectBridgeData(parsed, operations, syncInstances);
 
   const direction = parseDirectionSlug(directionSlug);
   if (!direction) {
     return null;
   }
 
-  const rows = buildRows(filtered, direction.backendDirection);
+  const rows = buildRows(selection.operations, direction.backendDirection);
 
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
-    tokenSymbol: parsed.tokenSymbol,
-    label: buildBridgeLabel(parsed.bridgeFamily, parsed.tokenSymbol),
+    tokenSymbol: selection.tokenSymbol,
+    tokenPairId: parsed.tokenPairId,
+    label:
+      buildBridgeLabel(parsed.bridgeFamily, selection.tokenSymbol) +
+      (selection.combined ? " (all token pairs)" : ""),
     directions: [
       {
         sourceChain: direction.sourceChain,

@@ -10,11 +10,8 @@ import {
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
 import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "../lib/bridge-slugs";
-import { mapOperationsToDirectionalStatuses } from "../lib/bridge-status-mapper";
-import {
-  collectTokenContractsForSymbol,
-  operationMatchesTokenSlug,
-} from "../lib/bridge-token-matching";
+import { selectBridgeData } from "../lib/bridge-token-matching";
+import { mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
 
 import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
 import type { BackendBridgeOperation, BackendIndexerStateResponse } from "../types/backend-api";
@@ -24,8 +21,8 @@ type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 
 interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
-  statuses: ReturnType<typeof mapOperationsToDirectionalStatuses>;
-  indexerState: BackendIndexerStateResponse;
+  statuses: ReturnType<typeof mapSyncInstancesToStatuses>;
+  indexerState?: BackendIndexerStateResponse;
 }
 
 function buildRows(
@@ -37,7 +34,9 @@ function buildRows(
     .sort((a, b) => b.nonce - a.nonce)
     .map((op) => {
       const base = {
-        id: `${op.bridge_type}-${direction}-${op.nonce}`,
+        id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
+          ":"
+        ),
         nonce: op.nonce,
         root: op.root ?? "0x0",
         sourceTxHash: op.source_tx_hash,
@@ -91,44 +90,26 @@ function mapOperationsToHistory(
   slug: string,
   directionSlug: BridgeDirectionSlug,
   operations: BackendBridgeOperation[],
-  contractsForTokenSymbol: Set<string>
+  tokenSymbol?: string,
+  tokenPairId?: string,
+  combined = false
 ): BridgeHistoryPageData | null {
   const parsed = parseBridgeSlug(slug);
-  if (!parsed) {
-    return null;
-  }
-
-  const filtered = operations.filter((op) => {
-    if (parsed.bridgeFamily !== op.bridge_type) {
-      return false;
-    }
-
-    if (parsed.bridgeFamily !== "token" || !parsed.tokenSymbol) {
-      return true;
-    }
-
-    return operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol);
-  });
-
-  if (!filtered.length) {
-    return null;
-  }
-
   const direction = parseDirectionSlug(directionSlug);
-  if (!direction) {
-    return null;
-  }
+  if (!parsed || !direction) return null;
 
   return {
     slug,
     bridgeFamily: parsed.bridgeFamily,
-    tokenSymbol: parsed.tokenSymbol,
-    label: buildBridgeLabel(parsed.bridgeFamily, parsed.tokenSymbol),
+    tokenSymbol,
+    tokenPairId,
+    label:
+      buildBridgeLabel(parsed.bridgeFamily, tokenSymbol) + (combined ? " (all token pairs)" : ""),
     directions: [
       {
         sourceChain: direction.sourceChain,
         destinationChain: direction.destinationChain,
-        rows: buildRows(filtered, direction.backendDirection),
+        rows: buildRows(operations, direction.backendDirection),
       },
     ],
   };
@@ -137,48 +118,50 @@ function mapOperationsToHistory(
 export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlug) {
   const api = useApiClient();
 
-  return useQuery<BridgeHistoryQueryData | null>({
+  const { data: indexerState } = useQuery({
+    queryKey: ["indexer-state"],
+    queryFn: () => fetchIndexerStateViaClient(api),
+    retry: false,
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+
+  const result = useQuery<BridgeHistoryQueryData | null>({
     queryKey: ["bridge-history", slug, directionSlug],
     queryFn: async () => {
       const parsed = parseBridgeSlug(slug);
-      if (!parsed) {
+      const direction = parseDirectionSlug(directionSlug);
+      if (!parsed || !direction) {
         return null;
       }
 
-      const [operations, syncInstances, indexerState] = await Promise.all([
+      const [operations, syncInstances] = await Promise.all([
         fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
         fetchSyncInstancesViaClient(api),
-        fetchIndexerStateViaClient(api),
       ]);
 
-      const contractsForTokenSymbol =
-        parsed.bridgeFamily === "token" && parsed.tokenSymbol
-          ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
-          : new Set<string>();
-
+      const selection = selectBridgeData(parsed, operations, syncInstances);
+      const statuses = mapSyncInstancesToStatuses(selection.instances).filter(
+        (status) => status.sourceChain === direction.sourceChain
+      );
       const history = mapOperationsToHistory(
         slug,
         directionSlug,
-        operations,
-        contractsForTokenSymbol
+        selection.operations,
+        selection.tokenSymbol,
+        parsed.tokenPairId,
+        selection.combined
       );
-      if (!history) {
-        return null;
-      }
+      if (!history) return null;
 
-      const parsedDirection = parseDirectionSlug(directionSlug);
-      const statuses = mapOperationsToDirectionalStatuses(
-        operations.filter((op) => {
-          if (history.bridgeFamily !== "token" || !history.tokenSymbol) {
-            return true;
-          }
-          return operationMatchesTokenSlug(op, history.tokenSymbol, contractsForTokenSymbol);
-        })
-      ).filter((s) => !parsedDirection || s.sourceChain === parsedDirection.sourceChain);
-
-      return { history, statuses, indexerState };
+      return { history, statuses };
     },
     staleTime: 30000,
     refetchInterval: 60000,
   });
+
+  return {
+    ...result,
+    data: result.data ? { ...result.data, indexerState } : result.data,
+  };
 }

@@ -1,4 +1,4 @@
-import { deriveComparisonSummary, deriveStaleReason } from "./bridge-comparison";
+import { deriveComparisonSummary } from "./bridge-comparison";
 import { getBridgeDashboard } from "./get-bridge-dashboard";
 
 import type { DirectionalBridgeStatus } from "../types/bridge";
@@ -9,19 +9,17 @@ import type {
   DirectionalBridgeSyncState,
 } from "../types/bridge-state";
 
-/** Threshold in milliseconds to consider data stale (5 minutes). */
-const STALE_THRESHOLD_MS = 5 * 60 * 1000;
-
 /**
  * Enrich a directional bridge status with comparison and stale details.
  */
 function enrichDirection(status: DirectionalBridgeStatus): DirectionalBridgeSyncState {
   const comparison = deriveComparisonSummary(status.source, status.destination);
-  const staleReason = deriveStaleReason(status.source, status.destination, STALE_THRESHOLD_MS);
+  const staleReason =
+    status.indexerStatus === "lagging" ? "An indexer is behind its chain tip." : undefined;
 
   return {
     ...status,
-    comparisonSummary: status.indexerStatus !== "fresh" ? "data_stale" : comparison,
+    comparisonSummary: status.indexerStatus === "lagging" ? "data_stale" : comparison,
     staleReason,
   };
 }
@@ -40,7 +38,7 @@ function buildSections(statuses: DirectionalBridgeStatus[]): BridgeSyncSection[]
   >();
 
   for (const d of statuses) {
-    const key = d.tokenSymbol ? `token-${d.tokenSymbol.toLowerCase()}` : d.bridgeFamily;
+    const key = d.bridgeFamily === "token" ? (d.tokenPairId ?? d.id) : d.bridgeFamily;
     const existing = groupMap.get(key);
     if (existing) {
       existing.dirs.push(d);
@@ -67,20 +65,15 @@ function buildSections(statuses: DirectionalBridgeStatus[]): BridgeSyncSection[]
       title = `${family} | Neo N3 ↔ Neo X`;
     }
 
-    // Ensure we always have exactly 2 directions (N3→X and X→N3)
-    const enriched = dirs.map(enrichDirection);
-    const n3ToX = enriched.find((d) => d.sourceChain === "neo_n3");
-    const xToN3 = enriched.find((d) => d.sourceChain === "neo_x");
-
-    if (n3ToX && xToN3) {
-      sections.push({
-        id,
-        bridgeFamily: family,
-        tokenSymbol: token,
-        title,
-        directions: [n3ToX, xToN3],
-      });
-    }
+    sections.push({
+      id,
+      bridgeFamily: family,
+      tokenSymbol: token,
+      title,
+      directions: dirs
+        .map(enrichDirection)
+        .sort((a, b) => a.sourceChain.localeCompare(b.sourceChain)),
+    });
   }
 
   // Sort: native first, then message, then tokens alphabetically
@@ -123,6 +116,7 @@ function computeSummary(sections: BridgeSyncSection[]): BridgeStateSummary {
         case "pending":
           counts.pending++;
           break;
+        case "root_mismatch":
         case "delayed":
           counts.delayed++;
           break;
@@ -148,6 +142,7 @@ function computeSummary(sections: BridgeSyncSection[]): BridgeStateSummary {
  */
 export async function getBridgeState(): Promise<BridgeStatePageData> {
   const dashboard = await getBridgeDashboard();
+  if (dashboard.syncUnavailable) throw new Error("Bridge sync state is unavailable");
   const sections = buildSections(dashboard.statuses);
   const summary = computeSummary(sections);
 

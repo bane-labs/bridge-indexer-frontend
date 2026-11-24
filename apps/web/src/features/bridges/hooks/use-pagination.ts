@@ -19,7 +19,7 @@ interface UsePaginationResult<T> {
   /** 1-based index of the last item on the current page. */
   endIndex: number;
   /** Ordered list of page numbers and "ellipsis" sentinels for rendering. */
-  visiblePages: Array<number | "ellipsis">;
+  visiblePages: (number | "ellipsis")[];
 }
 
 /**
@@ -75,7 +75,7 @@ export function usePagination<T>(
  * display in a pagination nav. Always includes the first two and last two
  * pages plus a window of ±1 around the current page.
  */
-function buildPageWindow(current: number, total: number): Array<number | "ellipsis"> {
+function buildPageWindow(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
@@ -85,7 +85,7 @@ function buildPageWindow(current: number, total: number): Array<number | "ellips
   );
   const sorted = Array.from(candidates).sort((a, b) => a - b);
 
-  const pages: Array<number | "ellipsis"> = [];
+  const pages: (number | "ellipsis")[] = [];
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i]! - sorted[i - 1]! > 1) {
       pages.push("ellipsis");

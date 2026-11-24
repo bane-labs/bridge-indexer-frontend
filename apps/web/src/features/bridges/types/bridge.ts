@@ -1,3 +1,5 @@
+import type { BackendLegacyHealth, BackendOperationalHealth } from "./backend-api";
+
 /** Chain identifiers for the bridge network. */
 export type ChainId = "neo_n3" | "neo_x";
 
@@ -17,12 +19,13 @@ export type IndexerStatus = "fresh" | "lagging" | "unknown";
  * Relay progress of a directional bridge instance.
  * Answers: "Is the bridge behaving as expected?"
  */
-export type OperationStatus = "synced" | "pending" | "delayed";
+export type OperationStatus = "synced" | "pending" | "delayed" | "root_mismatch" | "unknown";
 
 /** State snapshot for one side (source or destination) of a bridge. */
 export interface BridgeSideState {
-  nonce: number;
-  root: string;
+  synthetic?: boolean;
+  nonce?: number;
+  root?: string;
   blockNumber?: number;
   updatedAt?: string;
 }
@@ -32,6 +35,7 @@ export interface DirectionalBridgeStatus {
   id: string;
   bridgeFamily: BridgeFamily;
   tokenSymbol?: string;
+  tokenPairId?: string;
   sourceChain: ChainId;
   destinationChain: ChainId;
   source: BridgeSideState;
@@ -40,7 +44,7 @@ export interface DirectionalBridgeStatus {
   operationStatus: OperationStatus;
   /** Data freshness — can we trust the data we are showing? */
   indexerStatus: IndexerStatus;
-  lastUpdatedAt: string;
+  lastUpdatedAt?: string;
   /** Server-provided sync reason from /sync/instances. */
   syncReason?: string;
   /** Nonce lag (source - destination). */
@@ -66,6 +70,8 @@ export interface BridgeDashboardSummary {
   pending: number;
   /** Instances not relayed after the expected time window. */
   delayed: number;
+  /** Instances with unavailable backend sync state. */
+  unknown: number;
   // ── Indexer status counts (data freshness) ───────────────
   /** Instances whose indexer is caught up to chain head. */
   fresh: number;
@@ -73,9 +79,9 @@ export interface BridgeDashboardSummary {
   lagging: number;
   /** Instances where indexer state cannot be determined. */
   indexerUnknown: number;
-  lastRefreshedAt: string;
-  /** Overall health status from backend. */
-  healthStatus?: "healthy" | "degraded" | "unhealthy";
+  /** Latest source or destination bridge observation, independent of polling. */
+  lastObservedAt?: string;
+  health?: BackendOperationalHealth | BackendLegacyHealth | "unavailable" | "failed";
 }
 
 /** Per-chain indexer liveness snapshot for dashboard display. */
@@ -88,6 +94,7 @@ export interface ChainIndexerLivenessState {
 
 /** Complete dashboard data response. */
 export interface BridgeDashboardData {
+  syncUnavailable: boolean;
   summary: BridgeDashboardSummary;
   groups: BridgeGroup[];
   /** Flat list of all directional statuses for table-based views. */

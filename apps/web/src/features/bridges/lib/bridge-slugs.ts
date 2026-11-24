@@ -4,9 +4,7 @@ import type { BridgeFamily, ChainId } from "../types/bridge";
 export type BridgeDirectionSlug = "n3-to-x" | "x-to-n3";
 
 /** Parse a direction URL segment into chain IDs and backend direction. */
-export function parseDirectionSlug(
-  slug: string
-): {
+export function parseDirectionSlug(slug: string): {
   sourceChain: ChainId;
   destinationChain: ChainId;
   backendDirection: "deposit" | "withdrawal";
@@ -26,11 +24,28 @@ export function buildDirectionSlug(sourceChain: ChainId): BridgeDirectionSlug {
 }
 
 /** Map a bridge slug back to its family and optional token symbol. */
-export function parseBridgeSlug(
-  slug: string
-): { bridgeFamily: BridgeFamily; tokenSymbol?: string } | null {
+export function parseBridgeSlug(slug: string): {
+  bridgeFamily: BridgeFamily;
+  tokenSymbol?: string;
+  tokenPairId?: string;
+  instanceId?: string;
+} | null {
   if (slug === "native") return { bridgeFamily: "native" };
   if (slug === "message") return { bridgeFamily: "message" };
+
+  if (slug.startsWith("token-pair-")) {
+    const match = /^token-pair-([0-9a-f]+)-([0-9a-f]+)$/i.exec(slug);
+    if (!match) return null;
+    return { bridgeFamily: "token", tokenPairId: `${match[1]}:${match[2]}`.toLowerCase() };
+  }
+  if (slug.startsWith("token-instance-")) {
+    try {
+      const instanceId = decodeURIComponent(slug.slice("token-instance-".length));
+      return instanceId ? { bridgeFamily: "token", instanceId } : null;
+    } catch {
+      return null;
+    }
+  }
 
   if (slug.startsWith("token-")) {
     const tokenSymbol = slug.slice("token-".length);
@@ -45,6 +60,7 @@ export function parseBridgeSlug(
 export function buildBridgeLabel(bridgeFamily: BridgeFamily, tokenSymbol?: string): string {
   if (tokenSymbol) return `${tokenSymbol} Token Bridge`;
   if (bridgeFamily === "native") return "Native Bridge";
+  if (bridgeFamily === "token") return "Token Bridge";
   return "Message Bridge";
 }
 
@@ -83,9 +99,16 @@ export const KNOWN_BRIDGE_SLUGS = [
 export type BridgeSlug = (typeof KNOWN_BRIDGE_SLUGS)[number];
 
 /** Build a bridge slug from family + optional token symbol (re-exported convenience). */
-export function getBridgeSlug(family: BridgeFamily, tokenSymbol?: string): string {
-  if (tokenSymbol) return `token-${tokenSymbol.toLowerCase()}`;
-  return family;
+export function getBridgeSlug(
+  family: BridgeFamily,
+  tokenSymbol?: string,
+  tokenPairId?: string,
+  instanceId?: string
+): string {
+  if (family !== "token") return family;
+  if (tokenPairId) return `token-pair-${tokenPairId.replace(":", "-")}`;
+  if (instanceId) return `token-instance-${encodeURIComponent(instanceId)}`;
+  return tokenSymbol ? `token-${tokenSymbol.toLowerCase()}` : "token";
 }
 
 /** Chain ID ordering for consistent direction display. */

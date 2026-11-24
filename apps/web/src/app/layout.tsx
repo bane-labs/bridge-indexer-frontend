@@ -3,8 +3,8 @@ import "@atlas/ui/globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { GlobalErrorHandler } from "@/components/SentryErrorBoundary";
 import { SiteFooter, SiteHeader } from "@/components/layout";
+import { GlobalErrorHandler } from "@/components/SentryErrorBoundary";
 import { clientEnv } from "@/env";
 import { MainProvider } from "@/providers";
 

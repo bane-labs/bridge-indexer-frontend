@@ -2,8 +2,8 @@ import Link from "next/link";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui";
 
-import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 import { buildDirectionSlug } from "../lib/bridge-slugs";
+import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 
 import { ChainStateRow } from "./chain-state-row";
 import { OperationStatusBadge } from "./sync-status-badge";
@@ -16,7 +16,12 @@ interface DirectionalBridgeCardProps {
 
 export function DirectionalBridgeCard({ bridge }: DirectionalBridgeCardProps) {
   const directionLabel = getDirectionLabel(bridge.sourceChain, bridge.destinationChain);
-  const slug = getBridgeSlug(bridge.bridgeFamily, bridge.tokenSymbol);
+  const slug = getBridgeSlug(
+    bridge.bridgeFamily,
+    bridge.tokenSymbol,
+    bridge.tokenPairId,
+    bridge.id
+  );
   const directionSlug = buildDirectionSlug(bridge.sourceChain);
 
   let bridgeLabel: string;

@@ -1,4 +1,5 @@
 import { deriveComparisonSummary } from "./bridge-comparison";
+import { getBridgeSlug } from "./bridge-slugs";
 import { getDirectionLabel } from "./formatters";
 
 import type {
@@ -26,15 +27,15 @@ export interface BridgeInstanceRow {
   assetLabel: string;
   /** "native" | "message" | "token" */
   bridgeTypeLabel: string;
-  sourceNonce: number;
-  destinationNonce: number;
+  sourceNonce?: number;
+  destinationNonce?: number;
   /** source nonce - destination nonce */
-  lag: number;
+  lag?: number;
   /** Relay progress of the bridge operation. */
   operationStatus: OperationStatus;
   /** Data freshness of the indexer backing this instance. */
   indexerStatus: IndexerStatus;
-  lastUpdatedAt: string;
+  lastUpdatedAt?: string;
   /** Slug for linking to the detail page */
   slug: string;
   /** Root comparison result */
@@ -46,6 +47,8 @@ export interface BridgeInstanceRow {
 
 const SEVERITY_MAP: Record<OperationStatus, number> = {
   delayed: 0,
+  root_mismatch: 0,
+  unknown: 2,
   pending: 1,
   synced: 3,
 };
@@ -56,14 +59,20 @@ const SEVERITY_MAP: Record<OperationStatus, number> = {
  */
 export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): BridgeInstanceRow[] {
   return statuses.map((d) => {
-    const lag = d.source.nonce - d.destination.nonce;
-    const rootMatch = d.source.root === d.destination.root;
+    const lag =
+      d.deltaNonce ??
+      (d.source.nonce !== undefined && d.destination.nonce !== undefined
+        ? d.source.nonce - d.destination.nonce
+        : undefined);
+    const rootMatch = d.source.root !== undefined && d.source.root === d.destination.root;
     const comparison =
-      d.indexerStatus !== "fresh"
+      d.indexerStatus === "lagging"
         ? ("data_stale" as ComparisonSummary)
         : deriveComparisonSummary(d.source, d.destination);
 
-    const assetLabel = d.tokenSymbol ?? (d.bridgeFamily === "native" ? "Native (GAS)" : "Message");
+    const assetLabel =
+      d.tokenSymbol ??
+      { token: "Unknown token", native: "Native (GAS)", message: "Message" }[d.bridgeFamily];
     const FAMILY_TYPE_LABELS: Record<BridgeFamily, string> = {
       token: "Token",
       native: "Native",
@@ -71,7 +80,7 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
     };
     const bridgeTypeLabel = FAMILY_TYPE_LABELS[d.bridgeFamily];
 
-    const slug = d.tokenSymbol ? `token-${d.tokenSymbol.toLowerCase()}` : d.bridgeFamily;
+    const slug = getBridgeSlug(d.bridgeFamily, d.tokenSymbol, d.tokenPairId, d.id);
 
     return {
       id: d.id,
@@ -100,11 +109,13 @@ export function toBridgeInstanceRows(statuses: DirectionalBridgeStatus[]): Bridg
 export function sortBySeverity(rows: BridgeInstanceRow[]): BridgeInstanceRow[] {
   return [...rows].sort((a, b) => {
     if (a.severity !== b.severity) return a.severity - b.severity;
-    return Math.abs(b.lag) - Math.abs(a.lag);
+    return Math.abs(b.lag ?? 0) - Math.abs(a.lag ?? 0);
   });
 }
 
 /** Get only rows that need attention (operation not synced). */
 export function getProblematicRows(rows: BridgeInstanceRow[]): BridgeInstanceRow[] {
-  return sortBySeverity(rows.filter((r) => r.operationStatus !== "synced"));
+  return sortBySeverity(
+    rows.filter((r) => r.operationStatus === "root_mismatch" || r.operationStatus === "delayed")
+  );
 }

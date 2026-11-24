@@ -6,6 +6,7 @@ module.exports = {
   roots: ["<rootDir>/src"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   moduleNameMapper: {
+    "^@/lib/utils$": "<rootDir>/../../packages/ui/src/lib/utils.ts",
     "^@/(.*)$": "<rootDir>/src/$1",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
     // Force all packages to use workspace React (React 19 compatibility)

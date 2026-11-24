@@ -32,12 +32,15 @@ export function BridgeDashboardSummary({ summary }: BridgeDashboardSummaryProps)
         <Counter label="Synced" value={summary.synced} className="text-success-text" />
         <Counter label="Pending" value={summary.pending} className="text-info-text" />
         <Counter label="Delayed" value={summary.delayed} className="text-destructive-text" />
+        <Counter label="Unknown sync" value={summary.unknown} />
         {summary.lagging > 0 && (
           <Counter label="Indexer Lagging" value={summary.lagging} className="text-warning-text" />
         )}
-        {summary.indexerUnknown > 0 && <Counter label="Unknown" value={summary.indexerUnknown} />}
-        <div className="text-muted-foreground ml-auto text-xs" title={summary.lastRefreshedAt}>
-          Last refresh: {relativeTime(summary.lastRefreshedAt)}
+        {summary.indexerUnknown > 0 && (
+          <Counter label="Indexer unknown" value={summary.indexerUnknown} />
+        )}
+        <div className="text-muted-foreground ml-auto text-xs" title={summary.lastObservedAt}>
+          Latest bridge observation {relativeTime(summary.lastObservedAt)}
         </div>
       </CardContent>
     </Card>

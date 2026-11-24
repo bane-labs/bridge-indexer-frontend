@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { BridgeHistoryClient } from "@/features/bridges/components/bridge-history-client";
-import { parseDirectionSlug, parseBridgeSlug } from "@/features/bridges/lib/bridge-slugs";
+import { parseBridgeSlug, parseDirectionSlug } from "@/features/bridges/lib/bridge-slugs";
 
 import type { BridgeDirectionSlug } from "@/features/bridges/lib/bridge-slugs";
 import type { Metadata } from "next";

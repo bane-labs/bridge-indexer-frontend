@@ -13,7 +13,7 @@ import {
 } from "../lib/formatters";
 
 import { BridgeHistorySection } from "./bridge-history-section";
-import { SyncStatusBadge } from "./sync-status-badge";
+import { IndexerStatusBadge, SyncStatusBadge } from "./sync-status-badge";
 
 import type { BackendIndexerState, BackendIndexerStateResponse } from "../types/backend-api";
 import type { ChainId, DirectionalBridgeStatus } from "../types/bridge";
@@ -71,6 +71,11 @@ export function BridgeDetailView({ history, statuses, indexerState }: BridgeDeta
         </div>
 
         <p className="text-muted-foreground mt-1.5 font-mono text-sm">{context}</p>
+        {history.tokenPairId && (
+          <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+            N3 / Neo X contracts · {history.tokenPairId.replace(":", " / ")}
+          </p>
+        )}
       </header>
 
       {/* B. Sync summary cards for each direction */}
@@ -106,7 +111,11 @@ function DirectionSyncCard({
   const directionLabel = getDirectionLabel(status.sourceChain, status.destinationChain);
   const srcLabel = getChainLabel(status.sourceChain);
   const dstLabel = getChainLabel(status.destinationChain);
-  const lag = status.source.nonce - status.destination.nonce;
+  const lag =
+    status.deltaNonce ??
+    (status.source.nonce !== undefined && status.destination.nonce !== undefined
+      ? status.source.nonce - status.destination.nonce
+      : undefined);
   const rootMatch = status.source.root === status.destination.root;
 
   return (
@@ -115,7 +124,10 @@ function DirectionSyncCard({
         {/* Direction heading + status */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-foreground text-sm font-semibold">{directionLabel}</span>
-          <SyncStatusBadge status={status.operationStatus} />
+          <div className="flex gap-2">
+            <SyncStatusBadge status={status.operationStatus} />
+            <IndexerStatusBadge status={status.indexerStatus} />
+          </div>
         </div>
 
         <p className="text-muted-foreground text-xs leading-relaxed">
@@ -138,19 +150,23 @@ function DirectionSyncCard({
               <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.source.nonce)}
               </div>
-              <div className="text-muted-foreground text-xs">operations relayed</div>
+              <div className="text-muted-foreground text-[11px]">requested</div>
             </div>
             <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 Nonce
               </span>
-              <NonceLag lag={lag} syncStatus={status.operationStatus} />
+              {lag === undefined ? (
+                "Unavailable"
+              ) : (
+                <NonceLag lag={lag} syncStatus={status.operationStatus} />
+              )}
             </div>
             <div className="text-right">
               <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.destination.nonce)}
               </div>
-              <div className="text-muted-foreground text-xs">operations relayed</div>
+              <div className="text-muted-foreground text-[11px]">relayed</div>
             </div>
           </div>
 
@@ -166,7 +182,11 @@ function DirectionSyncCard({
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 State Root
               </span>
-              <RootMatchBadge match={rootMatch} />
+              {status.source.root === undefined || status.destination.root === undefined ? (
+                "Unavailable"
+              ) : (
+                <RootMatchBadge match={rootMatch} />
+              )}
             </div>
             <div
               className="text-foreground/80 text-right font-mono text-sm tabular-nums"
@@ -177,34 +197,22 @@ function DirectionSyncCard({
           </div>
         </div>
 
-        {/* Block heights + last indexed timestamps */}
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="text-muted-foreground space-y-0.5">
-            {status.source.blockNumber !== undefined && (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {[status.source, status.destination].map((side, index) => (
+            <div key={index} className="text-muted-foreground space-y-0.5">
+              <p>{index === 0 ? "Source observation" : "Destination observation"}</p>
               <div>
                 Block{" "}
-                <span className="text-foreground/70 font-mono">
-                  {formatBlockNumber(status.source.blockNumber)}
-                </span>
+                {side.blockNumber === undefined
+                  ? "Unavailable"
+                  : formatBlockNumber(side.blockNumber)}
               </div>
-            )}
-            <div title={status.source.updatedAt}>
-              Indexed {relativeTime(status.source.updatedAt)}
-            </div>
-          </div>
-          <div className="text-muted-foreground space-y-0.5 text-right">
-            {status.destination.blockNumber !== undefined && (
-              <div>
-                Block{" "}
-                <span className="text-foreground/70 font-mono">
-                  {formatBlockNumber(status.destination.blockNumber)}
-                </span>
+              <div title={side.updatedAt}>
+                Observed {side.updatedAt ? relativeTime(side.updatedAt) : "Unavailable"}
               </div>
-            )}
-            <div title={status.destination.updatedAt}>
-              Indexed {relativeTime(status.destination.updatedAt)}
+              {side.synthetic && <p>No destination execution required</p>}
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Chain indexer liveness */}
@@ -224,20 +232,20 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
   const absLag = Math.abs(lag);
   if (absLag === 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
-        ✓ In sync
+      <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold">
+        0 nonce difference
       </span>
     );
   }
   const color =
-    syncStatus === "delayed" || absLag > 5
+    lag < 0 || syncStatus === "delayed" || syncStatus === "root_mismatch"
       ? "bg-red-500/10 text-red-400"
       : "bg-amber-500/10 text-amber-400";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}
     >
-      {absLag} behind
+      Destination {lag < 0 ? "ahead" : "behind"} by {absLag}
     </span>
   );
 }
@@ -276,7 +284,7 @@ function ChainIndexerLivenessRow({
     >
       <div className="text-[11px] font-medium tracking-wide uppercase">{label}</div>
       <div>
-        Chain head:{" "}
+        Indexed block:{" "}
         <span className="text-foreground/70 font-mono">
           {formatBlockNumber(state.last_block_height)}
         </span>
