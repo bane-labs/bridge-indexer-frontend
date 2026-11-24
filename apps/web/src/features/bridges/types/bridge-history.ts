@@ -1,10 +1,13 @@
+import type { BackendBridgeOperation } from "./backend-api";
 import type { BridgeFamily, ChainId } from "./bridge";
 
 /** A single bridge operation row in the history view. */
 export interface BridgeOperationHistoryRow {
   id: string;
+  /** The backend record for technical details; lifecycle presentation is mapped in buildRows. */
+  operation: BackendBridgeOperation;
   nonce: number;
-  root: string;
+  root?: string;
   sourceTxHash?: string;
   /**
    * Transaction where the relayer updated the root on the destination chain.

@@ -9,6 +9,7 @@ import {
   fetchIndexerStateViaClient,
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
+import { buildRows } from "../lib/bridge-history-rows";
 import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "../lib/bridge-slugs";
 import { selectBridgeData } from "../lib/bridge-token-matching";
 import { mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
@@ -17,73 +18,10 @@ import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
 import type { BackendBridgeOperation, BackendIndexerStateResponse } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
-type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
-
 interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
   statuses: ReturnType<typeof mapSyncInstancesToStatuses>;
   indexerState?: BackendIndexerStateResponse;
-}
-
-function buildRows(
-  operations: BackendBridgeOperation[],
-  direction: "deposit" | "withdrawal"
-): HistoryRow[] {
-  return operations
-    .filter((op) => op.direction === direction)
-    .sort((a, b) => b.nonce - a.nonce)
-    .map((op) => {
-      const base = {
-        id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
-          ":"
-        ),
-        nonce: op.nonce,
-        root: op.root ?? "0x0",
-        sourceTxHash: op.source_tx_hash,
-        destinationTxHash: op.dest_tx_hash,
-        amount: op.amount,
-        fromAddress: op.from_address,
-        toAddress: op.to_address,
-      };
-
-      if (op.status === "stuck") {
-        if (op.claim_tx_hash) {
-          // Relayed and subsequently claimed — show as completed with claim
-          // tx link in the Settlement column.
-          return {
-            ...base,
-            status: "completed" as const,
-            claimTxHash: op.claim_tx_hash,
-            settledAt: op.completion_timestamp,
-          };
-        }
-        // Relayed, waiting for the user to claim (native/token) or the
-        // message to be executed (message bridge).
-        return {
-          ...base,
-          status: "relayed" as const,
-          settlementStatus:
-            op.bridge_type === "message"
-              ? ("waiting_for_execution" as const)
-              : ("waiting_to_be_claimed" as const),
-        };
-      }
-
-      if (op.status === "pending") {
-        // Not yet indexed on the destination chain — no settlement action yet.
-        return {
-          ...base,
-          status: "pending" as const,
-        };
-      }
-
-      // completed — directly distributed, no separate claim step.
-      return {
-        ...base,
-        status: "completed" as const,
-        settledAt: op.completion_timestamp,
-      };
-    });
 }
 
 function mapOperationsToHistory(

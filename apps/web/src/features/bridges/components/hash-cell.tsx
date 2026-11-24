@@ -4,7 +4,7 @@ import { CopyButton } from "./copy-button";
 
 interface HashCellProps {
   /** The full hash value. */
-  hash: string;
+  hash?: string;
 }
 
 /**
@@ -12,6 +12,7 @@ interface HashCellProps {
  * Shows a shortened hash with a copy button.
  */
 export function HashCell({ hash }: HashCellProps) {
+  if (!hash) return <span className="text-muted-foreground text-sm">Unavailable</span>;
   return (
     <span className="inline-flex items-center gap-1">
       <code className="text-muted-foreground font-mono text-sm tabular-nums" title={hash}>

@@ -25,6 +25,15 @@ export function getExplorerTxUrl(chainId: ChainId, txHash: string): string {
   return `${EXPLORER_TX_URLS[chainId]}/${hash}`;
 }
 
+/** Address pages on the same mainnet explorers used for transactions. */
+export function getExplorerAddressUrl(chainId: ChainId, address: string): string {
+  const base =
+    chainId === "neo_n3"
+      ? "https://dora.coz.io/address/neo3/mainnet"
+      : "https://xexplorer.neo.org/address";
+  return `${base}/${encodeURIComponent(address)}`;
+}
+
 /** Short display labels for chain explorer badges. */
 const EXPLORER_LABELS: Record<ChainId, string> = {
   neo_n3: "N3 Explorer",
