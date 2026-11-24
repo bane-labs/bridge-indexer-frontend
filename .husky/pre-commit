@@ -22,13 +22,43 @@ if command -v corepack >/dev/null 2>&1; then
   corepack enable
 fi
 
-MSYS_NO_PATHCONV=1 docker run --rm --network=none \
-  -v "$(pwd):/repo:ro" -w /repo \
-  ghcr.io/gitleaks/gitleaks:latest \
-  git --pre-commit --redact --staged --verbose
+# Exit code Gitleaks uses for detected leaks, distinct from its own errors (1).
+LEAKS_EXIT_CODE=3
+GITLEAKS_ARGS="git --pre-commit --redact --staged --verbose --no-color --exit-code $LEAKS_EXIT_CODE"
 
-if [ $? -ne 0 ]; then
+# Gitleaks logs to stderr (findings go to stdout). It can log an error and
+# still exit 0 when its `git diff` fails, so keep stderr to check for that.
+# --no-color keeps log lines as "<time> <LEVEL> <message>" for matching.
+GITLEAKS_LOG=$(mktemp)
+trap 'rm -f "$GITLEAKS_LOG"' EXIT
+
+# Prefer a native Gitleaks binary; fall back to Docker. The hook runs under
+# `sh -e`, so capture the status in the `if` rather than via a later `$?`.
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "Using native $(command -v gitleaks) ($(gitleaks version))"
+  # shellcheck disable=SC2086
+  if gitleaks $GITLEAKS_ARGS 2>"$GITLEAKS_LOG"; then status=0; else status=$?; fi
+elif command -v docker >/dev/null 2>&1; then
+  echo "Using Docker image ghcr.io/gitleaks/gitleaks:latest"
+  # shellcheck disable=SC2086
+  if MSYS_NO_PATHCONV=1 docker run --rm --network=none \
+    -v "$(pwd):/repo:ro" -w /repo \
+    ghcr.io/gitleaks/gitleaks:latest \
+    $GITLEAKS_ARGS 2>"$GITLEAKS_LOG"; then status=0; else status=$?; fi
+else
+  echo "🛑 Gitleaks is unavailable: install gitleaks or Docker. Commit aborted."
+  exit 1
+fi
+cat "$GITLEAKS_LOG" >&2
+
+if [ "$status" -eq "$LEAKS_EXIT_CODE" ]; then
   echo "🛑 Gitleaks found secrets. Commit aborted."
+  exit 1
+elif [ "$status" -ne 0 ]; then
+  echo "🛑 Gitleaks failed to run (exit $status); staged files were not scanned. Commit aborted."
+  exit 1
+elif grep -Eq '^[^ ]+ (ERR|FTL) ' "$GITLEAKS_LOG"; then
+  echo "🛑 Gitleaks reported an error; staged files may not have been scanned. Commit aborted."
   exit 1
 fi
 
