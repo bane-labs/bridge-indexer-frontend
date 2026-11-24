@@ -1,4 +1,4 @@
-import type { BackendOperationalHealth, BackendLegacyHealth } from "./backend-api";
+import type { BackendLegacyHealth, BackendOperationalHealth } from "./backend-api";
 
 /** Chain identifiers for the bridge network. */
 export type ChainId = "neo_n3" | "neo_x";
@@ -70,6 +70,8 @@ export interface BridgeDashboardSummary {
   pending: number;
   /** Instances not relayed after the expected time window. */
   delayed: number;
+  /** Instances with unavailable backend sync state. */
+  unknown: number;
   // ── Indexer status counts (data freshness) ───────────────
   /** Instances whose indexer is caught up to chain head. */
   fresh: number;
@@ -83,6 +85,7 @@ export interface BridgeDashboardSummary {
 
 /** Complete dashboard data response. */
 export interface BridgeDashboardData {
+  syncUnavailable: boolean;
   summary: BridgeDashboardSummary;
   groups: BridgeGroup[];
   /** Flat list of all directional statuses for table-based views. */

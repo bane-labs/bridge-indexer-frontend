@@ -21,14 +21,15 @@ export function useBridgeDashboard() {
     queryKey: ["bridge-dashboard"],
     queryFn: async () => {
       const [syncInstances, health] = await Promise.all([
-        fetchSyncInstancesViaClient(api),
+        fetchSyncInstancesViaClient(api).catch(() => undefined),
         fetchHealthViaClient(api).catch(() => undefined),
       ]);
 
-      const statuses = mapSyncInstancesToStatuses(syncInstances);
+      const statuses = mapSyncInstancesToStatuses(syncInstances ?? []);
       const dashboard = buildDashboardData(statuses);
 
       dashboard.summary.health = getOperationalHealth(health);
+      dashboard.syncUnavailable = syncInstances === undefined;
 
       return dashboard;
     },

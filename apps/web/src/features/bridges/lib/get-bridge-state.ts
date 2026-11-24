@@ -142,6 +142,7 @@ function computeSummary(sections: BridgeSyncSection[]): BridgeStateSummary {
  */
 export async function getBridgeState(): Promise<BridgeStatePageData> {
   const dashboard = await getBridgeDashboard();
+  if (dashboard.syncUnavailable) throw new Error("Bridge sync state is unavailable");
   const sections = buildSections(dashboard.statuses);
   const summary = computeSummary(sections);
 

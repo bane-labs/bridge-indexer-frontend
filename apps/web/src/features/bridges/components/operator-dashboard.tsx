@@ -30,7 +30,7 @@ import { OperationStatusBadge } from "./sync-status-badge";
 import type { BridgeDashboardSummary, DirectionalBridgeStatus } from "../types/bridge";
 
 // ─── Filter types ─────────────────────────────────────────
-type StatusFilter = "all" | "synced" | "pending" | "delayed" | "lagging";
+type StatusFilter = "all" | "synced" | "pending" | "delayed" | "unknown" | "lagging";
 type DirectionFilter = "all" | "neo_n3_to_neo_x" | "neo_x_to_neo_n3";
 type TypeFilter = "all" | "native" | "message" | "token";
 
@@ -39,6 +39,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "synced", label: "Synced" },
   { value: "pending", label: "Pending" },
   { value: "delayed", label: "Delayed" },
+  { value: "unknown", label: "Unknown" },
   { value: "lagging", label: "Indexer Lagging" },
 ];
 
@@ -88,6 +89,7 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
           <KpiCard label="Synced" value={summary.synced} colorClass="text-emerald-500" />
           <KpiCard label="Pending" value={summary.pending} colorClass="text-blue-400" />
           <KpiCard label="Delayed" value={summary.delayed} colorClass="text-red-400" />
+          <KpiCard label="Unknown" value={summary.unknown} />
         </div>
         <div className="flex items-center gap-3">
           <span

@@ -98,6 +98,7 @@ export function computeDashboardSummary(
     synced: opCounts.synced,
     pending: opCounts.pending,
     delayed: opCounts.delayed + opCounts.root_mismatch,
+    unknown: opCounts.unknown,
     fresh: idxCounts.fresh,
     lagging: idxCounts.lagging,
     indexerUnknown: idxCounts.unknown,
@@ -161,5 +162,5 @@ export function buildDashboardData(directions: DirectionalBridgeStatus[]): Bridg
     return a.label.localeCompare(b.label);
   });
 
-  return { summary, groups, statuses: directions };
+  return { summary, groups, statuses: directions, syncUnavailable: false };
 }

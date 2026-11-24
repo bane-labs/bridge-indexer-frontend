@@ -13,14 +13,15 @@ import type { BridgeDashboardData } from "../types/bridge";
  */
 export async function getBridgeDashboard(): Promise<BridgeDashboardData> {
   const [syncInstances, health] = await Promise.all([
-    fetchSyncInstances(),
+    fetchSyncInstances().catch(() => undefined),
     fetchHealth().catch(() => undefined),
   ]);
 
-  const statuses = mapSyncInstancesToStatuses(syncInstances);
+  const statuses = mapSyncInstancesToStatuses(syncInstances ?? []);
   const dashboard = buildDashboardData(statuses);
 
   dashboard.summary.health = getOperationalHealth(health);
+  dashboard.syncUnavailable = syncInstances === undefined;
 
   return dashboard;
 }

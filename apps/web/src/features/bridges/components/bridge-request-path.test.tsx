@@ -4,7 +4,15 @@ import nodeFetch, { Headers as NodeHeaders } from "node-fetch";
 import { URL as NodeURL } from "url";
 
 import { renderWithProviders, server } from "@/test";
-import { startupHealth, legacyBridgeHealth, detailSync } from "@/test/fixtures/bridge-health";
+import {
+  startupHealth,
+  legacyBridgeHealth,
+  detailSync,
+  destinationSymbolSync,
+  otherPairSync,
+  detailOperation,
+  otherPairOperation,
+} from "@/test/fixtures/bridge-health";
 
 import { useBridgeHistory } from "../hooks/use-bridge-history";
 import { BridgeDashboardClient } from "./bridge-dashboard-client";
@@ -60,8 +68,8 @@ test("shows a health request failure with zero sync instances", async () => {
   ).toBeInTheDocument();
 });
 
-function DetailRequest() {
-  const { data } = useBridgeHistory("token-ndmeme");
+function DetailRequest({ slug = "token-ndmeme" }: { slug?: string }) {
+  const { data } = useBridgeHistory(slug);
   return data ? <BridgeDetailView {...data} /> : <p>Loading</p>;
 }
 
@@ -103,4 +111,73 @@ test("the delayed filter includes the root mismatch counted in the summary", asy
   await screen.findByRole("table");
   await user.click(screen.getByRole("button", { name: "Delayed" }));
   expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+});
+
+test("health remains visible when sync fails", async () => {
+  server.use(
+    rest.get("*/health", (_req, res, ctx) => res(ctx.json(legacyBridgeHealth))),
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.status(503)))
+  );
+  renderWithProviders(<BridgeDashboardClient />);
+  expect(await screen.findByText("Healthy", {}, { timeout: 10000 })).toBeInTheDocument();
+  expect(screen.getByText(/could not load bridge sync state/i)).toBeInTheDocument();
+});
+
+test("unknown directions have a visible count and filter", async () => {
+  server.use(
+    rest.get("*/health", (_req, res, ctx) => res(ctx.json(legacyBridgeHealth))),
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([{ ...detailSync, status: "unknown", reason: "MISSING_STATE" }]))
+    )
+  );
+  const { user } = renderWithProviders(<BridgeDashboardClient />);
+  await screen.findByRole("table");
+  const countLabel = screen.getByText("Unknown", { selector: "span" });
+  expect(countLabel.parentElement).toHaveTextContent("1");
+  await user.click(screen.getByRole("button", { name: "Unknown" }));
+  expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+});
+
+test("destination-only symbols produce usable pair-specific dashboard links", async () => {
+  server.use(
+    rest.get("*/health", (_req, res, ctx) => res(ctx.json(legacyBridgeHealth))),
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([destinationSymbolSync, otherPairSync]))
+    )
+  );
+  renderWithProviders(<BridgeDashboardClient />);
+  const table = await screen.findByRole("table");
+  const links = within(table).getAllByRole("link", { name: "Details →" });
+  expect(links.map((link) => link.getAttribute("href"))).toEqual([
+    "/bridges/token-pair-aaa-bbb",
+    "/bridges/token-pair-ccc-ddd",
+  ]);
+  expect(within(table).getAllByText("NDMEME")).toHaveLength(2);
+});
+
+test("pair detail requests isolate same-symbol operations and sync instances", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([destinationSymbolSync, otherPairSync]))
+    ),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [detailOperation, otherPairOperation], total: 2 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(await screen.findByRole("heading", { name: "NDMEME Token Bridge" })).toBeInTheDocument();
+  expect(screen.getAllByText("42").length).toBeGreaterThan(0);
+  expect(screen.queryByText("999")).not.toBeInTheDocument();
+  expect(screen.queryByText("0xother")).not.toBeInTheDocument();
+});
+
+test("unresolved token symbols can still open an exact pair detail page", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([{ ...detailSync, src_token_symbol: undefined, dst_token_symbol: undefined }]))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(await screen.findByRole("heading", { name: "AAA Token Bridge" })).toBeInTheDocument();
+  expect(screen.getByText("42")).toBeInTheDocument();
 });
