@@ -232,20 +232,20 @@ function NonceLag({ lag, syncStatus }: { lag: number; syncStatus: string }) {
   const absLag = Math.abs(lag);
   if (absLag === 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
-        ✓ In sync
+      <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold">
+        0 nonce difference
       </span>
     );
   }
   const color =
-    syncStatus === "delayed" || syncStatus === "root_mismatch"
+    lag < 0 || syncStatus === "delayed" || syncStatus === "root_mismatch"
       ? "bg-red-500/10 text-red-400"
       : "bg-amber-500/10 text-amber-400";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}
     >
-      {absLag} behind
+      Destination {lag < 0 ? "ahead" : "behind"} by {absLag}
     </span>
   );
 }

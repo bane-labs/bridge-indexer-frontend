@@ -127,3 +127,19 @@ export const claimedDetailOperation: BackendBridgeOperation = {
   status: "stuck",
   claim_tx_hash: `0x${"1".repeat(64)}`,
 };
+
+export const rootMismatchSync: BackendDirectionalInstanceSync = {
+  ...detailSync,
+  status: "root_mismatch",
+  reason: "ROOT_MISMATCH_AT_EQUAL_NONCE",
+  dst_nonce: 42,
+  delta_nonce: 0,
+  dst_root: "0xdifferent",
+};
+export const destinationAheadSync: BackendDirectionalInstanceSync = {
+  ...detailSync,
+  status: "unknown",
+  reason: "INVARIANT_VIOLATION",
+  dst_nonce: 43,
+  delta_nonce: -1,
+};

@@ -100,9 +100,9 @@ function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
         <div className="flex items-center gap-3">
           <span
             className="text-muted-foreground text-xs tabular-nums"
-            title={summary.lastRefreshedAt}
+            title={summary.lastObservedAt}
           >
-            Refreshed {relativeTime(summary.lastRefreshedAt)}
+            Latest bridge observation {relativeTime(summary.lastObservedAt)}
           </span>
         </div>
       </CardContent>

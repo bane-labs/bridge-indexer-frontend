@@ -102,7 +102,7 @@ export function computeDashboardSummary(
     fresh: idxCounts.fresh,
     lagging: idxCounts.lagging,
     indexerUnknown: idxCounts.unknown,
-    lastRefreshedAt: latestUpdate || undefined,
+    lastObservedAt: latestUpdate || undefined,
   };
 }
 

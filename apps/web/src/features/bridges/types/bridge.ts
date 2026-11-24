@@ -79,7 +79,8 @@ export interface BridgeDashboardSummary {
   lagging: number;
   /** Instances where indexer state cannot be determined. */
   indexerUnknown: number;
-  lastRefreshedAt?: string;
+  /** Latest source or destination bridge observation, independent of polling. */
+  lastObservedAt?: string;
   health?: BackendOperationalHealth | BackendLegacyHealth | "unavailable" | "failed";
 }
 

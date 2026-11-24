@@ -13,6 +13,8 @@ import {
   startupHealth,
   legacyBridgeHealth,
   detailSync,
+  rootMismatchSync,
+  destinationAheadSync,
   destinationSymbolSync,
   otherPairSync,
   detailOperation,
@@ -238,4 +240,33 @@ test("merged history retains main's completed claim presentation", async () => {
   expect(within(table).getByText("Completed")).toBeInTheDocument();
   const claim = within(table).getByRole("link", { name: /Transaction 0x11111111/ });
   expect(claim.getAttribute("href")).toContain(claimedDetailOperation.claim_tx_hash);
+});
+
+test("equal nonces do not assert sync when the backend reports a root mismatch", async () => {
+  server.use(rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([rootMismatchSync]))));
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(await screen.findByLabelText("Operation: Root mismatch")).toBeInTheDocument();
+  expect(screen.getByText("0 nonce difference")).toBeInTheDocument();
+  expect(screen.queryByText(/In sync/)).not.toBeInTheDocument();
+});
+
+test("negative nonce differences describe the destination as ahead", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([destinationAheadSync])))
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(await screen.findByText("Destination ahead by 1")).toBeInTheDocument();
+  expect(screen.queryByText(/1 behind/)).not.toBeInTheDocument();
+});
+
+test("dashboard labels the latest bridge observation independently of polling", async () => {
+  server.use(
+    rest.get("*/health", (_req, res, ctx) => res(ctx.json(legacyBridgeHealth))),
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/indexer/state", (_req, res, ctx) => res(ctx.json(liveIndexerState)))
+  );
+  renderWithProviders(<BridgeDashboardClient />);
+  const observation = await screen.findByText(/^Latest bridge observation /);
+  expect(observation.getAttribute("title")).toBe(detailSync.src_observed_at);
+  expect(screen.queryByText(/^Refreshed /)).not.toBeInTheDocument();
 });

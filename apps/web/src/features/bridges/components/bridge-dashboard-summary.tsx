@@ -39,8 +39,8 @@ export function BridgeDashboardSummary({ summary }: BridgeDashboardSummaryProps)
         {summary.indexerUnknown > 0 && (
           <Counter label="Indexer unknown" value={summary.indexerUnknown} />
         )}
-        <div className="text-muted-foreground ml-auto text-xs" title={summary.lastRefreshedAt}>
-          Last refresh: {relativeTime(summary.lastRefreshedAt)}
+        <div className="text-muted-foreground ml-auto text-xs" title={summary.lastObservedAt}>
+          Latest bridge observation {relativeTime(summary.lastObservedAt)}
         </div>
       </CardContent>
     </Card>
