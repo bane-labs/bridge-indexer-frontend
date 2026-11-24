@@ -6,19 +6,15 @@ import { useApiClient } from "@/lib/api/hooks";
 
 import {
   fetchAllBridgeOperationsViaClient,
+  fetchIndexerStateViaClient,
   fetchSyncInstancesViaClient,
 } from "../lib/backend-bridge-operations";
-import { buildBridgeLabel, parseBridgeSlug } from "../lib/bridge-slugs";
-import {
-  collectTokenContractsForSymbol,
-  getTokenPairId,
-  normalizeTokenContractAddress,
-  operationMatchesTokenSlug,
-  resolvedSyncInstanceTokenSymbol,
-} from "../lib/bridge-token-matching";
+import { buildBridgeLabel, parseBridgeSlug, parseDirectionSlug } from "../lib/bridge-slugs";
+import { selectBridgeData } from "../lib/bridge-token-matching";
 import { mapSyncInstancesToStatuses } from "../lib/sync-instance-mapper";
 
-import type { BackendBridgeOperation } from "../types/backend-api";
+import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
+import type { BackendBridgeOperation, BackendIndexerStateResponse } from "../types/backend-api";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
@@ -26,6 +22,7 @@ type HistoryRow = BridgeHistoryPageData["directions"][number]["rows"][number];
 interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
   statuses: ReturnType<typeof mapSyncInstancesToStatuses>;
+  indexerState?: BackendIndexerStateResponse;
 }
 
 function buildRows(
@@ -35,39 +32,71 @@ function buildRows(
   return operations
     .filter((op) => op.direction === direction)
     .sort((a, b) => b.nonce - a.nonce)
-    .map((op) => ({
-      id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
-        ":"
-      ),
-      nonce: op.nonce,
-      root: op.root ?? "0x0",
-      sourceTxHash: op.source_tx_hash,
-      destinationTxHash: op.dest_tx_hash,
-      settledAt: op.completion_timestamp,
-      status: op.status,
-      settlementStatus:
-        op.status === "pending"
-          ? op.bridge_type === "message"
-            ? ("waiting for execution" as const)
-            : ("claimable" as const)
-          : undefined,
-      amount: op.amount,
-      fromAddress: op.from_address,
-      toAddress: op.to_address,
-    }));
+    .map((op) => {
+      const base = {
+        id: [op.bridge_type, direction, op.token_contract, op.dest_token_contract, op.nonce].join(
+          ":"
+        ),
+        nonce: op.nonce,
+        root: op.root ?? "0x0",
+        sourceTxHash: op.source_tx_hash,
+        destinationTxHash: op.dest_tx_hash,
+        amount: op.amount,
+        fromAddress: op.from_address,
+        toAddress: op.to_address,
+      };
+
+      if (op.status === "stuck") {
+        if (op.claim_tx_hash) {
+          // Relayed and subsequently claimed — show as completed with claim
+          // tx link in the Settlement column.
+          return {
+            ...base,
+            status: "completed" as const,
+            claimTxHash: op.claim_tx_hash,
+            settledAt: op.completion_timestamp,
+          };
+        }
+        // Relayed, waiting for the user to claim (native/token) or the
+        // message to be executed (message bridge).
+        return {
+          ...base,
+          status: "relayed" as const,
+          settlementStatus:
+            op.bridge_type === "message"
+              ? ("waiting_for_execution" as const)
+              : ("waiting_to_be_claimed" as const),
+        };
+      }
+
+      if (op.status === "pending") {
+        // Not yet indexed on the destination chain — no settlement action yet.
+        return {
+          ...base,
+          status: "pending" as const,
+        };
+      }
+
+      // completed — directly distributed, no separate claim step.
+      return {
+        ...base,
+        status: "completed" as const,
+        settledAt: op.completion_timestamp,
+      };
+    });
 }
 
 function mapOperationsToHistory(
   slug: string,
+  directionSlug: BridgeDirectionSlug,
   operations: BackendBridgeOperation[],
   tokenSymbol?: string,
   tokenPairId?: string,
   combined = false
 ): BridgeHistoryPageData | null {
   const parsed = parseBridgeSlug(slug);
-  if (!parsed) {
-    return null;
-  }
+  const direction = parseDirectionSlug(directionSlug);
+  if (!parsed || !direction) return null;
 
   return {
     slug,
@@ -78,27 +107,31 @@ function mapOperationsToHistory(
       buildBridgeLabel(parsed.bridgeFamily, tokenSymbol) + (combined ? " (all token pairs)" : ""),
     directions: [
       {
-        sourceChain: "neo_n3",
-        destinationChain: "neo_x",
-        rows: buildRows(operations, "deposit"),
-      },
-      {
-        sourceChain: "neo_x",
-        destinationChain: "neo_n3",
-        rows: buildRows(operations, "withdrawal"),
+        sourceChain: direction.sourceChain,
+        destinationChain: direction.destinationChain,
+        rows: buildRows(operations, direction.backendDirection),
       },
     ],
   };
 }
 
-export function useBridgeHistory(slug: string) {
+export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlug) {
   const api = useApiClient();
 
-  return useQuery<BridgeHistoryQueryData | null>({
-    queryKey: ["bridge-history", slug],
+  const { data: indexerState } = useQuery({
+    queryKey: ["indexer-state"],
+    queryFn: () => fetchIndexerStateViaClient(api),
+    retry: false,
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+
+  const result = useQuery<BridgeHistoryQueryData | null>({
+    queryKey: ["bridge-history", slug, directionSlug],
     queryFn: async () => {
       const parsed = parseBridgeSlug(slug);
-      if (!parsed) {
+      const direction = parseDirectionSlug(directionSlug);
+      if (!parsed || !direction) {
         return null;
       }
 
@@ -107,61 +140,17 @@ export function useBridgeHistory(slug: string) {
         fetchSyncInstancesViaClient(api),
       ]);
 
-      const contractsForTokenSymbol =
-        parsed.bridgeFamily === "token" && parsed.tokenSymbol
-          ? collectTokenContractsForSymbol(syncInstances, parsed.tokenSymbol)
-          : new Set<string>();
-
-      const selectedInstances = syncInstances.filter((instance) => {
-        if (instance.bridge_type !== parsed.bridgeFamily) return false;
-        if (parsed.bridgeFamily !== "token") return true;
-        if (parsed.tokenPairId) {
-          return (
-            getTokenPairId(instance.src_chain, instance.src_token, instance.dst_token) ===
-            parsed.tokenPairId
-          );
-        }
-        if (parsed.instanceId) return instance.id === parsed.instanceId;
-        return (
-          resolvedSyncInstanceTokenSymbol(instance)?.toLowerCase() ===
-          parsed.tokenSymbol?.toLowerCase()
-        );
-      });
-      const selectedOperations = operations.filter((op) => {
-        if (op.bridge_type !== parsed.bridgeFamily) return false;
-        if (parsed.bridgeFamily !== "token") return true;
-        if (parsed.tokenPairId) {
-          return (
-            getTokenPairId(op.source_chain, op.token_contract, op.dest_token_contract) ===
-            parsed.tokenPairId
-          );
-        }
-        if (parsed.instanceId) {
-          return selectedInstances.some(
-            (instance) =>
-              instance.src_chain === op.source_chain &&
-              instance.dst_chain === op.destination_chain &&
-              normalizeTokenContractAddress(instance.src_token) ===
-                normalizeTokenContractAddress(op.token_contract) &&
-              normalizeTokenContractAddress(instance.dst_token) ===
-                normalizeTokenContractAddress(op.dest_token_contract)
-          );
-        }
-        return Boolean(
-          parsed.tokenSymbol &&
-            operationMatchesTokenSlug(op, parsed.tokenSymbol, contractsForTokenSymbol)
-        );
-      });
-      const statuses = mapSyncInstancesToStatuses(selectedInstances);
-      const pairCount = new Set(statuses.map((status) => status.tokenPairId ?? status.id)).size;
-      const tokenSymbol =
-        parsed.tokenSymbol ?? selectedInstances.map(resolvedSyncInstanceTokenSymbol).find(Boolean);
+      const selection = selectBridgeData(parsed, operations, syncInstances);
+      const statuses = mapSyncInstancesToStatuses(selection.instances).filter(
+        (status) => status.sourceChain === direction.sourceChain
+      );
       const history = mapOperationsToHistory(
         slug,
-        selectedOperations,
-        tokenSymbol,
+        directionSlug,
+        selection.operations,
+        selection.tokenSymbol,
         parsed.tokenPairId,
-        Boolean(parsed.tokenSymbol && pairCount > 1)
+        selection.combined
       );
       if (!history) return null;
 
@@ -170,4 +159,9 @@ export function useBridgeHistory(slug: string) {
     staleTime: 30000,
     refetchInterval: 60000,
   });
+
+  return {
+    ...result,
+    data: result.data ? { ...result.data, indexerState } : result.data,
+  };
 }

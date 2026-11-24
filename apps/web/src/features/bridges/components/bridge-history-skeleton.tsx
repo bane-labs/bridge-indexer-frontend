@@ -14,29 +14,65 @@ export function BridgeHistorySkeleton() {
         <Skeleton className="h-4 w-48" />
       </div>
 
-      {/* Sync summary cards — 2-column grid */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[0, 1].map((i) => (
-          <Card key={i}>
+      {/* Sync summary card — one for the current direction */}
+      <div className="grid gap-4">
+        {[0].map((i) => (
+          <Card key={i} className="gap-0">
             <CardContent className="space-y-4">
               {/* Direction heading + status badge */}
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-32" />
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-5 w-16 rounded-full" />
               </div>
-              {/* Comparison grid rows: Nonce, Root, Block */}
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
+              {/* Description lines */}
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
+              {/* Comparison table */}
+              <div className="border-border overflow-hidden rounded-md border">
+                {/* Column headers */}
+                <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] items-center border-b px-4 py-2.5">
+                  <Skeleton className="h-3.5 w-16" />
+                  <div className="flex w-36 justify-center">
+                    <Skeleton className="h-3 w-6" />
+                  </div>
+                  <Skeleton className="ml-auto h-3.5 w-16" />
                 </div>
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-24" />
+                {/* Nonce row */}
+                <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-4 py-4">
+                  <div className="space-y-1">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <div className="flex w-36 flex-col items-center gap-1.5">
+                    <Skeleton className="h-3 w-10" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
+                {/* State root row */}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-4">
+                  <Skeleton className="h-4 w-28" />
+                  <div className="flex w-36 flex-col items-center gap-1.5">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-5 w-24 rounded-full" />
+                  </div>
+                  <Skeleton className="ml-auto h-4 w-28" />
+                </div>
+              </div>
+              {/* Footer: block + indexed timestamps */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-3.5 w-24" />
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-3.5 w-24" />
                 </div>
               </div>
             </CardContent>
@@ -44,8 +80,8 @@ export function BridgeHistorySkeleton() {
         ))}
       </div>
 
-      {/* History tables — one per direction */}
-      {[0, 1].map((i) => (
+      {/* History table — one for the current direction */}
+      {[0].map((i) => (
         <div key={i} className="space-y-4">
           <div>
             <Skeleton className="mb-1 h-6 w-40" />
@@ -53,26 +89,28 @@ export function BridgeHistorySkeleton() {
           </div>
           <Card>
             <CardContent className="space-y-3 p-0">
-              {/* Table header: Nonce, Status, Amount, Root, Source Tx, Dest Tx, Settled */}
+              {/* Table header: Nonce, Status, Settlement, Amount, Root, Source Tx, Dest Tx, Settled */}
               <div className="bg-muted/50 flex gap-4 px-4 py-3">
-                <Skeleton className="h-4 w-[8%]" />
+                <Skeleton className="h-4 w-[7%]" />
+                <Skeleton className="h-4 w-[9%]" />
+                <Skeleton className="h-4 w-[11%]" />
+                <Skeleton className="h-4 w-[7%]" />
+                <Skeleton className="h-4 w-[15%]" />
+                <Skeleton className="h-4 w-[15%]" />
+                <Skeleton className="h-4 w-[15%]" />
                 <Skeleton className="h-4 w-[10%]" />
-                <Skeleton className="h-4 w-[8%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[18%]" />
-                <Skeleton className="h-4 w-[12%]" />
               </div>
               {/* Row skeletons */}
               {Array.from({ length: 5 }, (_, j) => (
                 <div key={j} className="flex gap-4 px-4 py-2">
-                  <Skeleton className="h-4 w-[8%]" />
-                  <Skeleton className="h-5 w-[10%]" />
-                  <Skeleton className="h-4 w-[8%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[18%]" />
-                  <Skeleton className="h-4 w-[12%]" />
+                  <Skeleton className="h-4 w-[7%]" />
+                  <Skeleton className="h-5 w-[9%]" />
+                  <Skeleton className="h-4 w-[11%]" />
+                  <Skeleton className="h-4 w-[7%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[15%]" />
+                  <Skeleton className="h-4 w-[10%]" />
                 </div>
               ))}
             </CardContent>

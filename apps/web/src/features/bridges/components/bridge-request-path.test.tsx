@@ -3,8 +3,13 @@ import { rest } from "msw";
 import nodeFetch, { Headers as NodeHeaders } from "node-fetch";
 import { URL as NodeURL } from "url";
 
-import { renderWithProviders, server } from "@/test";
+import { renderWithProviders, server, mockRouterState } from "@/test";
 import {
+  liveIndexerState,
+  reverseDetailSync,
+  reverseDetailOperation,
+  paginatedDetailOperations,
+  claimedDetailOperation,
   startupHealth,
   legacyBridgeHealth,
   detailSync,
@@ -13,6 +18,8 @@ import {
   detailOperation,
   otherPairOperation,
 } from "@/test/fixtures/bridge-health";
+
+import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
 
 import { useBridgeHistory } from "../hooks/use-bridge-history";
 import { BridgeDashboardClient } from "./bridge-dashboard-client";
@@ -68,8 +75,14 @@ test("shows a health request failure with zero sync instances", async () => {
   ).toBeInTheDocument();
 });
 
-function DetailRequest({ slug = "token-ndmeme" }: { slug?: string }) {
-  const { data } = useBridgeHistory(slug);
+function DetailRequest({
+  slug = "token-ndmeme",
+  direction = "n3-to-x",
+}: {
+  slug?: string;
+  direction?: BridgeDirectionSlug;
+}) {
+  const { data } = useBridgeHistory(slug, direction);
   return data ? <BridgeDetailView {...data} /> : <p>Loading</p>;
 }
 
@@ -110,7 +123,7 @@ test("the delayed filter includes the root mismatch counted in the summary", asy
   const { user } = renderWithProviders(<BridgeDashboardClient />);
   await screen.findByRole("table");
   await user.click(screen.getByRole("button", { name: "Delayed" }));
-  expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+  expect(within(screen.getByRole("table")).getAllByRole("link")).toHaveLength(1);
 });
 
 test("health remains visible when sync fails", async () => {
@@ -135,7 +148,7 @@ test("unknown directions have a visible count and filter", async () => {
   const countLabel = screen.getByText("Unknown", { selector: "span" });
   expect(countLabel.parentElement).toHaveTextContent("1");
   await user.click(screen.getByRole("button", { name: "Unknown" }));
-  expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+  expect(within(screen.getByRole("table")).getAllByRole("link")).toHaveLength(1);
 });
 
 test("destination-only symbols produce usable pair-specific dashboard links", async () => {
@@ -145,13 +158,13 @@ test("destination-only symbols produce usable pair-specific dashboard links", as
       res(ctx.json([destinationSymbolSync, otherPairSync]))
     )
   );
-  renderWithProviders(<BridgeDashboardClient />);
+  const { user } = renderWithProviders(<BridgeDashboardClient />);
   const table = await screen.findByRole("table");
-  const links = within(table).getAllByRole("link", { name: "Details →" });
-  expect(links.map((link) => link.getAttribute("href"))).toEqual([
-    "/bridges/token-pair-aaa-bbb",
-    "/bridges/token-pair-ccc-ddd",
-  ]);
+  const links = within(table).getAllByRole("link", { name: /View .* bridge details/ });
+  await user.click(links[0]!);
+  expect(mockRouterState.push).toHaveBeenLastCalledWith("/bridges/token-pair-aaa-bbb/n3-to-x");
+  await user.click(links[1]!);
+  expect(mockRouterState.push).toHaveBeenLastCalledWith("/bridges/token-pair-ccc-ddd/n3-to-x");
   expect(within(table).getAllByText("NDMEME")).toHaveLength(2);
 });
 
@@ -178,6 +191,51 @@ test("unresolved token symbols can still open an exact pair detail page", async 
     )
   );
   renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
-  expect(await screen.findByRole("heading", { name: "AAA Token Bridge" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "BBB Token Bridge" })).toBeInTheDocument();
   expect(screen.getByText("42")).toBeInTheDocument();
+});
+
+test("directional details keep the requested direction and optional liveness", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([detailSync, reverseDetailSync]))
+    ),
+    rest.get("*/indexer/state", (_req, res, ctx) => res(ctx.json(liveIndexerState))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [detailOperation, reverseDetailOperation], total: 2 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" direction="x-to-n3" />);
+  expect((await screen.findAllByText("77")).length).toBeGreaterThan(0);
+  expect(screen.queryByText("42")).not.toBeInTheDocument();
+  expect(await screen.findByText("Indexer liveness")).toBeInTheDocument();
+  expect(screen.getAllByText("Indexed block:").length).toBe(2);
+});
+
+test("merged history retains pagination", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: paginatedDetailOperations, total: 11 }))
+    )
+  );
+  const { user } = renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  const table = await screen.findByRole("table");
+  expect(within(table).getAllByRole("row")).toHaveLength(11);
+  await user.click(screen.getByLabelText("Go to next page"));
+  expect(within(table).getAllByRole("row")).toHaveLength(2);
+});
+
+test("merged history retains main's completed claim presentation", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [claimedDetailOperation], total: 1 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  const table = await screen.findByRole("table");
+  expect(within(table).getByText("Completed")).toBeInTheDocument();
+  const claim = within(table).getByRole("link", { name: /Transaction 0x11111111/ });
+  expect(claim.getAttribute("href")).toContain(claimedDetailOperation.claim_tx_hash);
 });

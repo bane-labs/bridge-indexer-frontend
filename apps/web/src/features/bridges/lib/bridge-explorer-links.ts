@@ -9,9 +9,20 @@ const EXPLORER_TX_URLS: Record<ChainId, string> = {
   neo_x: "https://xexplorer.neo.org/tx",
 };
 
+/**
+ * Some explorers require a specific prefix on the tx hash in the URL.
+ * Neo N3's Dora explorer requires the "0x" prefix.
+ */
+const EXPLORER_TX_HASH_PREFIX: Record<ChainId, string> = {
+  neo_n3: "0x",
+  neo_x: "",
+};
+
 /** Build a block explorer transaction URL for a given chain + tx hash. */
 export function getExplorerTxUrl(chainId: ChainId, txHash: string): string {
-  return `${EXPLORER_TX_URLS[chainId]}/${txHash}`;
+  const prefix = EXPLORER_TX_HASH_PREFIX[chainId];
+  const hash = txHash.startsWith(prefix) ? txHash : `${prefix}${txHash}`;
+  return `${EXPLORER_TX_URLS[chainId]}/${hash}`;
 }
 
 /** Short display labels for chain explorer badges. */

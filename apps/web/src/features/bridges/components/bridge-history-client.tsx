@@ -6,12 +6,15 @@ import { BridgeDetailView } from "./bridge-detail-view";
 import { BridgeHistoryError } from "./bridge-history-error";
 import { BridgeHistorySkeleton } from "./bridge-history-skeleton";
 
+import type { BridgeDirectionSlug } from "../lib/bridge-slugs";
+
 interface BridgeHistoryClientProps {
   slug: string;
+  direction: BridgeDirectionSlug;
 }
 
-export function BridgeHistoryClient({ slug }: BridgeHistoryClientProps) {
-  const { data, isLoading, isError } = useBridgeHistory(slug);
+export function BridgeHistoryClient({ slug, direction }: BridgeHistoryClientProps) {
+  const { data, isLoading, isError } = useBridgeHistory(slug, direction);
 
   if (isLoading) {
     return <BridgeHistorySkeleton />;
@@ -21,5 +24,11 @@ export function BridgeHistoryClient({ slug }: BridgeHistoryClientProps) {
     return <BridgeHistoryError />;
   }
 
-  return <BridgeDetailView history={data.history} statuses={data.statuses} />;
+  return (
+    <BridgeDetailView
+      history={data.history}
+      statuses={data.statuses}
+      indexerState={data.indexerState}
+    />
+  );
 }

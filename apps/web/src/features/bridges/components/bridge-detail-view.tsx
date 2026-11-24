@@ -15,20 +15,23 @@ import {
 import { BridgeHistorySection } from "./bridge-history-section";
 import { IndexerStatusBadge, SyncStatusBadge } from "./sync-status-badge";
 
-import type { DirectionalBridgeStatus } from "../types/bridge";
+import type { BackendIndexerState, BackendIndexerStateResponse } from "../types/backend-api";
+import type { ChainId, DirectionalBridgeStatus } from "../types/bridge";
 import type { BridgeHistoryPageData } from "../types/bridge-history";
 
 interface BridgeDetailViewProps {
   history: BridgeHistoryPageData;
   /** Matching directional bridge statuses (sync state) for this bridge. */
   statuses: DirectionalBridgeStatus[];
+  /** Per-chain indexer state for liveness display. */
+  indexerState?: BackendIndexerStateResponse;
 }
 
 /**
  * Full detail view for a single bridge instance (both directions).
  * Composes: header → sync summary cards → history tables.
  */
-export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
+export function BridgeDetailView({ history, statuses, indexerState }: BridgeDetailViewProps) {
   const [first] = history.directions;
   const sourceLabel = getChainLabel(first.sourceChain);
   const destLabel = getChainLabel(first.destinationChain);
@@ -77,9 +80,9 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
 
       {/* B. Sync summary cards for each direction */}
       {statuses.length > 0 && (
-        <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <div className="mb-8 grid gap-4">
           {statuses.map((s) => (
-            <DirectionSyncCard key={s.id} status={s} />
+            <DirectionSyncCard key={s.id} status={s} indexerState={indexerState} />
           ))}
         </div>
       )}
@@ -98,7 +101,13 @@ export function BridgeDetailView({ history, statuses }: BridgeDetailViewProps) {
 }
 
 // ─── Compact sync summary card per direction ──────────────
-function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
+function DirectionSyncCard({
+  status,
+  indexerState,
+}: {
+  status: DirectionalBridgeStatus;
+  indexerState?: BackendIndexerStateResponse;
+}) {
   const directionLabel = getDirectionLabel(status.sourceChain, status.destinationChain);
   const srcLabel = getChainLabel(status.sourceChain);
   const dstLabel = getChainLabel(status.destinationChain);
@@ -129,21 +138,21 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
         {/* Comparison table */}
         <div className="border-border overflow-hidden rounded-md border text-sm">
           {/* Column headers */}
-          <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] border-b px-3 py-2 text-xs font-semibold">
+          <div className="bg-muted/40 border-border grid grid-cols-[1fr_auto_1fr] border-b px-4 py-2.5 text-sm font-semibold">
             <span className="text-foreground">{srcLabel}</span>
-            <span className="text-muted-foreground w-28 text-center">vs</span>
+            <span className="text-muted-foreground w-36 text-center">vs</span>
             <span className="text-foreground text-right">{dstLabel}</span>
           </div>
 
           {/* Operations (nonce) row */}
-          <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-3">
+          <div className="border-border/50 grid grid-cols-[1fr_auto_1fr] items-center border-b px-4 py-4">
             <div>
-              <div className="font-mono text-base font-semibold tabular-nums">
+              <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.source.nonce)}
               </div>
               <div className="text-muted-foreground text-[11px]">requested</div>
             </div>
-            <div className="flex w-28 flex-col items-center gap-1">
+            <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 Nonce
               </span>
@@ -154,7 +163,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               )}
             </div>
             <div className="text-right">
-              <div className="font-mono text-base font-semibold tabular-nums">
+              <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.destination.nonce)}
               </div>
               <div className="text-muted-foreground text-[11px]">relayed</div>
@@ -162,14 +171,14 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
           </div>
 
           {/* State root row */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 py-3">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-4">
             <div
-              className="text-foreground/80 font-mono text-xs tabular-nums"
+              className="text-foreground/80 font-mono text-sm tabular-nums"
               title={status.source.root}
             >
               {shortenHash(status.source.root, 8, 4)}
             </div>
-            <div className="flex w-28 flex-col items-center gap-1">
+            <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
                 State Root
               </span>
@@ -180,7 +189,7 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
               )}
             </div>
             <div
-              className="text-foreground/80 text-right font-mono text-xs tabular-nums"
+              className="text-foreground/80 text-right font-mono text-sm tabular-nums"
               title={status.destination.root}
             >
               {shortenHash(status.destination.root, 8, 4)}
@@ -205,6 +214,15 @@ function DirectionSyncCard({ status }: { status: DirectionalBridgeStatus }) {
             </div>
           ))}
         </div>
+
+        {/* Chain indexer liveness */}
+        {indexerState && (
+          <ChainIndexerLiveness
+            sourceChain={status.sourceChain}
+            destinationChain={status.destinationChain}
+            indexerState={indexerState}
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -241,5 +259,78 @@ function RootMatchBadge({ match }: { match: boolean }) {
     <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
       ✕ Roots differ
     </span>
+  );
+}
+
+// ─── Chain indexer liveness strip ─────────────────────────
+function ChainIndexerLivenessRow({
+  state,
+  label,
+  alignRight,
+}: {
+  state: BackendIndexerState | null;
+  label: string;
+  alignRight?: boolean;
+}) {
+  if (!state) return null;
+  const isSyncing = state.is_syncing;
+  return (
+    <div
+      className={
+        alignRight
+          ? "text-muted-foreground space-y-0.5 text-right text-xs"
+          : "text-muted-foreground space-y-0.5 text-xs"
+      }
+    >
+      <div className="text-[11px] font-medium tracking-wide uppercase">{label}</div>
+      <div>
+        Indexed block:{" "}
+        <span className="text-foreground/70 font-mono">
+          {formatBlockNumber(state.last_block_height)}
+        </span>
+      </div>
+      <div
+        title={state.updated_at}
+        className={
+          alignRight
+            ? "flex flex-wrap items-center justify-end gap-1.5"
+            : "flex flex-wrap items-center gap-1.5"
+        }
+      >
+        <span>{relativeTime(state.updated_at)}</span>
+        {isSyncing && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+            ↻ syncing
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChainIndexerLiveness({
+  sourceChain,
+  destinationChain,
+  indexerState,
+}: {
+  sourceChain: ChainId;
+  destinationChain: ChainId;
+  indexerState: BackendIndexerStateResponse;
+}) {
+  const srcState = sourceChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
+  const dstState = destinationChain === "neo_n3" ? indexerState.neo_n3 : indexerState.neo_x;
+  const srcLabel = getChainLabel(sourceChain);
+  const dstLabel = getChainLabel(destinationChain);
+
+  return (
+    <div className="border-t pt-3">
+      <div className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+        Indexer liveness
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <ChainIndexerLivenessRow state={srcState} label={srcLabel} />
+        <ChainIndexerLivenessRow state={dstState} label={dstLabel} alignRight />
+      </div>
+    </div>
   );
 }

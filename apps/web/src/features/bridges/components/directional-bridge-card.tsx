@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@atlas/ui";
 
+import { buildDirectionSlug } from "../lib/bridge-slugs";
 import { getBridgeSlug, getChainLabel, getDirectionLabel, relativeTime } from "../lib/formatters";
 
 import { ChainStateRow } from "./chain-state-row";
@@ -21,6 +22,7 @@ export function DirectionalBridgeCard({ bridge }: DirectionalBridgeCardProps) {
     bridge.tokenPairId,
     bridge.id
   );
+  const directionSlug = buildDirectionSlug(bridge.sourceChain);
 
   let bridgeLabel: string;
   if (bridge.tokenSymbol) {
@@ -56,7 +58,7 @@ export function DirectionalBridgeCard({ bridge }: DirectionalBridgeCardProps) {
       <CardFooter className="text-muted-foreground flex items-center justify-between text-xs">
         <span title={bridge.lastUpdatedAt}>Updated {relativeTime(bridge.lastUpdatedAt)}</span>
         <Link
-          href={`/bridges/${slug}`}
+          href={`/bridges/${slug}/${directionSlug}`}
           className="hover:text-foreground underline-offset-4 hover:underline"
         >
           View history →

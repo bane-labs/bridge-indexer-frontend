@@ -17,12 +17,39 @@ interface BridgeHistoryTableProps {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
+  { label: string; variant: "success" | "destructive" | "warning" | "secondary" | "info" }
 > = {
   completed: { label: "Completed", variant: "success" },
-  pending: { label: "Relayed", variant: "secondary" },
-  stuck: { label: "Stuck", variant: "destructive" },
+  relayed: { label: "Relayed", variant: "secondary" },
+  pending: { label: "In Progress", variant: "info" },
 };
+
+const SETTLEMENT_LABEL: Record<string, string> = {
+  waiting_to_be_claimed: "Waiting to be claimed",
+  waiting_for_execution: "Waiting for execution",
+};
+
+function SettlementCell({
+  claimTxHash,
+  settlementStatus,
+  destinationChain,
+}: {
+  claimTxHash?: string;
+  settlementStatus?: string;
+  destinationChain: ChainId;
+}) {
+  if (claimTxHash) {
+    return <TxLinkCell txHash={claimTxHash} chainId={destinationChain} />;
+  }
+  if (settlementStatus) {
+    return (
+      <span className="text-muted-foreground text-sm">
+        {SETTLEMENT_LABEL[settlementStatus] ?? settlementStatus}
+      </span>
+    );
+  }
+  return <span className="text-muted-foreground text-sm">—</span>;
+}
 
 /**
  * History table for a single bridge direction.
@@ -38,9 +65,9 @@ export function BridgeHistoryTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="bg-card overflow-x-auto rounded-lg border shadow-sm">
       <Table>
-        <TableHeader className="bg-muted/50 sticky top-0 z-10">
+        <TableHeader className="bg-muted sticky top-0 z-10">
           <TableRow>
             <TableHead className="w-20">Nonce</TableHead>
             <TableHead>Status</TableHead>
@@ -68,13 +95,11 @@ export function BridgeHistoryTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {row.settlementStatus ? (
-                    <span className="text-muted-foreground text-sm capitalize">
-                      {row.settlementStatus}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )}
+                  <SettlementCell
+                    claimTxHash={row.claimTxHash}
+                    settlementStatus={row.settlementStatus}
+                    destinationChain={destinationChain}
+                  />
                 </TableCell>
                 <TableCell className="font-mono text-sm tabular-nums">
                   {row.amount ?? "—"}

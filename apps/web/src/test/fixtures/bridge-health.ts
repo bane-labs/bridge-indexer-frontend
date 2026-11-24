@@ -1,6 +1,7 @@
 import type {
   BackendBridgeOperation,
   BackendDirectionalInstanceSync,
+  BackendIndexerStateResponse,
   BackendLegacyHealth,
   BackendOperationalHealth,
 } from "@/features/bridges/types/backend-api";
@@ -75,4 +76,54 @@ export const otherPairOperation: BackendBridgeOperation = {
   dest_token_contract: "0xddd",
   source_tx_hash: "0xother-request",
   root: "0xother",
+};
+
+export const liveIndexerState: BackendIndexerStateResponse = {
+  neo_n3: {
+    chain: "neo_n3",
+    last_block_height: 123,
+    last_block_hash: "0xn3",
+    is_syncing: false,
+    updated_at: "2026-11-24T10:00:00Z",
+  },
+  neo_x: {
+    chain: "neo_x",
+    last_block_height: 456,
+    last_block_hash: "0xx",
+    is_syncing: false,
+    updated_at: "2026-11-24T10:00:00Z",
+  },
+};
+export const reverseDetailSync: BackendDirectionalInstanceSync = {
+  ...detailSync,
+  id: "ndmeme-reverse",
+  src_chain: "neo_x",
+  dst_chain: "neo_n3",
+  src_token: "0xbbb",
+  dst_token: "0xaaa",
+  src_nonce: 77,
+  dst_nonce: 76,
+  delta_nonce: 1,
+};
+export const reverseDetailOperation: BackendBridgeOperation = {
+  ...detailOperation,
+  direction: "withdrawal",
+  source_chain: "neo_x",
+  destination_chain: "neo_n3",
+  token_contract: "0xbbb",
+  dest_token_contract: "0xaaa",
+  nonce: 77,
+};
+export const paginatedDetailOperations: BackendBridgeOperation[] = Array.from(
+  { length: 11 },
+  (_, index) => ({
+    ...detailOperation,
+    nonce: index + 1,
+    status: "completed",
+  })
+);
+export const claimedDetailOperation: BackendBridgeOperation = {
+  ...detailOperation,
+  status: "stuck",
+  claim_tx_hash: `0x${"1".repeat(64)}`,
 };

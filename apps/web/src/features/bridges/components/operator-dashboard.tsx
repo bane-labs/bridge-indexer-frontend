@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import {
@@ -22,12 +23,17 @@ import {
   sortBySeverity,
   toBridgeInstanceRows,
 } from "../lib/bridge-instance";
+import { buildDirectionSlug } from "../lib/bridge-slugs";
 import { relativeTime } from "../lib/formatters";
 
 import { OperationalHealthSummary } from "./operational-health-summary";
 import { OperationStatusBadge } from "./sync-status-badge";
 
-import type { BridgeDashboardSummary, DirectionalBridgeStatus } from "../types/bridge";
+import type {
+  BridgeDashboardSummary,
+  ChainIndexerLivenessState,
+  DirectionalBridgeStatus,
+} from "../types/bridge";
 
 // ─── Filter types ─────────────────────────────────────────
 type StatusFilter = "all" | "synced" | "pending" | "delayed" | "unknown" | "lagging";
@@ -80,7 +86,7 @@ function KpiCard({
 
 function SummaryStrip({ summary }: { summary: BridgeDashboardSummary }) {
   return (
-    <Card className="border-border/60 bg-card/50 backdrop-blur">
+    <Card className="border-border/60 bg-card">
       <CardContent className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-1">
           {/* Operation status counts */}
@@ -121,7 +127,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
           {rows.map((row) => (
             <div
               key={row.id}
-              className="bg-background/60 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+              className="bg-card/80 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <OperationStatusBadge status={row.operationStatus} />
@@ -137,7 +143,7 @@ function NeedsAttention({ rows }: { rows: BridgeInstanceRow[] }) {
                   </span>
                 )}
                 <Link
-                  href={`/bridges/${row.slug}`}
+                  href={`/bridges/${row.slug}/${buildDirectionSlug(row.sourceChain)}`}
                   className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
                 >
                   Inspect →
@@ -168,7 +174,7 @@ function FilterPill<T extends string>({
     <button
       type="button"
       onClick={() => onSelect(value)}
-      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+      className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
         active
           ? "bg-primary text-primary-foreground border-transparent"
           : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
@@ -294,14 +300,10 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function getRowHighlight(operationStatus: string, indexerStatus: string): string {
-  if (operationStatus === "delayed") return "bg-red-500/2";
-  if (indexerStatus === "lagging") return "bg-amber-500/2";
-  return "";
-}
-
 // ─── Main bridge status table ─────────────────────────────
 function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
+  const router = useRouter();
+
   if (rows.length === 0) {
     return (
       <Card>
@@ -313,9 +315,9 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="bg-card overflow-x-auto rounded-lg border shadow-sm">
       <Table>
-        <TableHeader className="bg-muted/40">
+        <TableHeader className="bg-muted">
           <TableRow>
             <TableHead className="w-10">Status</TableHead>
             <TableHead>Direction</TableHead>
@@ -325,53 +327,96 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
             <TableHead className="text-right">Dst Nonce</TableHead>
             <TableHead className="text-right">Lag</TableHead>
             <TableHead className="text-right">Updated</TableHead>
-            <TableHead className="w-20 text-right" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className={`hover:bg-muted/30 transition-colors ${getRowHighlight(row.operationStatus, row.indexerStatus)}`}
-            >
-              <TableCell>
-                <OperationStatusBadge status={row.operationStatus} />
-              </TableCell>
-              <TableCell className="text-foreground text-sm font-medium whitespace-nowrap">
-                {row.directionLabel}
-              </TableCell>
-              <TableCell className="text-foreground text-sm">{row.assetLabel}</TableCell>
-              <TableCell>
-                <TypeBadge type={row.bridgeTypeLabel} />
-              </TableCell>
-              <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.sourceNonce?.toLocaleString("en-US") ?? "Unavailable"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-sm tabular-nums">
-                {row.destinationNonce?.toLocaleString("en-US") ?? "Unavailable"}
-              </TableCell>
-              <TableCell className="text-right">
-                <LagCell lag={row.lag} status={row.operationStatus} />
-              </TableCell>
-              <TableCell
-                className="text-muted-foreground text-right text-xs whitespace-nowrap"
-                title={row.lastUpdatedAt}
+          {rows.map((row) => {
+            const href = `/bridges/${row.slug}/${buildDirectionSlug(row.sourceChain)}`;
+
+            return (
+              <TableRow
+                key={row.id}
+                className="hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => router.push(href)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(href);
+                  }
+                }}
+                tabIndex={0}
+                role="link"
+                aria-label={`View ${row.directionLabel} ${row.assetLabel} bridge details`}
               >
-                {relativeTime(row.lastUpdatedAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                <Link
-                  href={`/bridges/${row.slug}`}
-                  className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+                <TableCell>
+                  <OperationStatusBadge status={row.operationStatus} />
+                </TableCell>
+                <TableCell className="text-foreground text-sm font-medium whitespace-nowrap">
+                  {row.directionLabel}
+                </TableCell>
+                <TableCell className="text-foreground text-sm">{row.assetLabel}</TableCell>
+                <TableCell>
+                  <TypeBadge type={row.bridgeTypeLabel} />
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {row.sourceNonce?.toLocaleString("en-US") ?? "Unavailable"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-sm tabular-nums">
+                  {row.destinationNonce?.toLocaleString("en-US") ?? "Unavailable"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <LagCell lag={row.lag} status={row.operationStatus} />
+                </TableCell>
+                <TableCell
+                  className="text-muted-foreground text-right text-xs whitespace-nowrap"
+                  title={row.lastUpdatedAt}
                 >
-                  Details →
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
+                  {relativeTime(row.lastUpdatedAt)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+// ─── Chain indexer liveness strip ───────────────────────
+function ChainLivenessStrip({ liveness }: { liveness: ChainIndexerLivenessState[] }) {
+  if (liveness.length === 0) return null;
+
+  const CHAIN_LABELS: Record<string, string> = {
+    neo_n3: "Neo N3",
+    neo_x: "Neo X",
+  };
+
+  return (
+    <Card className="border-border/60 bg-card">
+      <CardContent className="flex flex-wrap items-center gap-6 py-3">
+        <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+          Indexer liveness
+        </span>
+        {liveness.map((l) => (
+          <div key={l.chain} className="flex items-center gap-2 text-xs">
+            <span className="text-foreground/80 font-medium">
+              {CHAIN_LABELS[l.chain] ?? l.chain}
+            </span>
+            <span className="text-muted-foreground font-mono">
+              Block #{l.lastBlockHeight.toLocaleString("en-US")}
+            </span>
+            <span className="text-muted-foreground" title={l.updatedAt}>
+              {relativeTime(l.updatedAt)}
+            </span>
+            {l.isSyncing && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+                ↻ syncing
+              </span>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -379,9 +424,10 @@ function BridgeStatusTable({ rows }: { rows: BridgeInstanceRow[] }) {
 interface OperatorDashboardProps {
   statuses: DirectionalBridgeStatus[];
   summary: BridgeDashboardSummary;
+  chainLiveness?: ChainIndexerLivenessState[];
 }
 
-export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps) {
+export function OperatorDashboard({ statuses, summary, chainLiveness }: OperatorDashboardProps) {
   const allRows = useMemo(() => toBridgeInstanceRows(statuses), [statuses]);
   const problematicRows = useMemo(() => getProblematicRows(allRows), [allRows]);
 
@@ -433,6 +479,9 @@ export function OperatorDashboard({ statuses, summary }: OperatorDashboardProps)
       {/* A. Top summary strip */}
       <OperationalHealthSummary health={summary.health} />
       <SummaryStrip summary={summary} />
+
+      {/* Chain indexer liveness */}
+      {chainLiveness && chainLiveness.length > 0 && <ChainLivenessStrip liveness={chainLiveness} />}
 
       {/* D. Needs attention — only when problems exist */}
       <NeedsAttention rows={problematicRows} />

@@ -39,5 +39,11 @@ export function BridgeDashboardClient() {
     );
   }
 
-  return <OperatorDashboard statuses={data.statuses} summary={data.summary} />;
+  return (
+    <OperatorDashboard
+      statuses={data.statuses}
+      summary={data.summary}
+      chainLiveness={data.chainLiveness}
+    />
+  );
 }
