@@ -8,7 +8,13 @@ export function deriveComparisonSummary(
   source: BridgeSideState,
   destination: BridgeSideState
 ): ComparisonSummary {
-  if (source.nonce === undefined || destination.nonce === undefined) return "unavailable";
+  if (
+    source.nonce === undefined ||
+    destination.nonce === undefined ||
+    !source.root?.trim() ||
+    !destination.root?.trim()
+  )
+    return "unavailable";
   const nonceMatch = source.nonce === destination.nonce;
   const rootMatch = source.root === destination.root;
 
