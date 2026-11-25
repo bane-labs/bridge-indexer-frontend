@@ -111,6 +111,45 @@ test("detail cards render backend state when history is empty and indexer state 
   expect(screen.queryByLabelText("Operation: Delayed")).not.toBeInTheDocument();
 });
 
+test("legacy token URLs display a unique backend token pair", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync, reverseDetailSync])))
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  const pair = await screen.findByRole("region", { name: "Token pair identity" });
+  expect(within(pair).getByText("aaa")).toBeInTheDocument();
+  expect(within(pair).getByText("bbb")).toBeInTheDocument();
+  expect(within(pair).queryByText(/identity unavailable/i)).not.toBeInTheDocument();
+});
+
+test("legacy token URLs do not choose between multiple or incomplete backend pairs", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync, otherPairSync])))
+  );
+  const { unmount } = renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+  unmount();
+
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([{ ...detailSync, dst_token: undefined }]))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+});
+
+test("legacy token URLs reject an observed history pair conflicting with sync state", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [otherPairOperation], total: 1 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+});
+
 test("sync request failure does not hide operation history or token pair identity", async () => {
   server.use(
     rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.status(503))),

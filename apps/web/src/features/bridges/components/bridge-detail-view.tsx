@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge, Card, CardContent } from "@atlas/ui";
 
 import { buildBridgeContext } from "../lib/bridge-slugs";
+import { getTokenPairId } from "../lib/bridge-token-matching";
 import {
   formatBlockNumber,
   formatNonce,
@@ -61,12 +62,32 @@ export function BridgeDetailView({
     message: "bg-amber-500/10 text-amber-400",
   };
   const familyColor = FAMILY_COLORS[history.bridgeFamily] ?? "bg-teal-500/10 text-teal-400";
-  const verifiedTokenPair =
-    history.tokenPairId &&
-    (statuses.some((status) => status.tokenPairId === history.tokenPairId) ||
-      (!historyLoading && !historyError && history.directions.some((dir) => dir.rows.length > 0)))
-      ? history.tokenPairId
+  const observedPairs = [
+    ...statuses.map((status) => status.tokenPairId),
+    ...(!historyLoading && !historyError
+      ? history.directions.flatMap((dir) =>
+          dir.rows.map(({ operation }) =>
+            getTokenPairId(
+              operation.source_chain,
+              operation.token_contract,
+              operation.dest_token_contract
+            )
+          )
+        )
+      : []),
+  ];
+  const uniquePair =
+    observedPairs.length > 0 && observedPairs.every((pair) => pair && pair === observedPairs[0])
+      ? observedPairs[0]
       : undefined;
+  let verifiedTokenPair = uniquePair;
+  if (history.tokenPairId) {
+    verifiedTokenPair =
+      observedPairs.includes(history.tokenPairId) &&
+      observedPairs.every((pair) => !pair || pair === history.tokenPairId)
+        ? history.tokenPairId
+        : undefined;
+  }
   let stateContent = (
     <p className="text-muted-foreground text-sm">
       Directional bridge state unavailable from the backend.
