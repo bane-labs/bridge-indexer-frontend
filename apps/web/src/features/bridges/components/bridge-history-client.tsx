@@ -14,13 +14,13 @@ interface BridgeHistoryClientProps {
 }
 
 export function BridgeHistoryClient({ slug, direction }: BridgeHistoryClientProps) {
-  const { data, isLoading, isError } = useBridgeHistory(slug, direction);
+  const { data, isLoading } = useBridgeHistory(slug, direction);
 
   if (isLoading) {
     return <BridgeHistorySkeleton />;
   }
 
-  if (isError || !data) {
+  if (!data) {
     return <BridgeHistoryError />;
   }
 

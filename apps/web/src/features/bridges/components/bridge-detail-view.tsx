@@ -13,6 +13,8 @@ import {
 } from "../lib/formatters";
 
 import { BridgeHistorySection } from "./bridge-history-section";
+import { BridgeTokenPairIdentity } from "./bridge-token-pair-identity";
+import { CopyButton } from "./copy-button";
 import { IndexerStatusBadge, SyncStatusBadge } from "./sync-status-badge";
 
 import type { BackendIndexerState, BackendIndexerStateResponse } from "../types/backend-api";
@@ -25,13 +27,25 @@ interface BridgeDetailViewProps {
   statuses: DirectionalBridgeStatus[];
   /** Per-chain indexer state for liveness display. */
   indexerState?: BackendIndexerStateResponse;
+  stateLoading?: boolean;
+  stateError?: boolean;
+  historyLoading?: boolean;
+  historyError?: boolean;
 }
 
 /**
  * Full detail view for a single bridge instance (both directions).
  * Composes: header → sync summary cards → history tables.
  */
-export function BridgeDetailView({ history, statuses, indexerState }: BridgeDetailViewProps) {
+export function BridgeDetailView({
+  history,
+  statuses,
+  indexerState,
+  stateLoading,
+  stateError,
+  historyLoading,
+  historyError,
+}: BridgeDetailViewProps) {
   const [first] = history.directions;
   const sourceLabel = getChainLabel(first.sourceChain);
   const destLabel = getChainLabel(first.destinationChain);
@@ -47,6 +61,43 @@ export function BridgeDetailView({ history, statuses, indexerState }: BridgeDeta
     message: "bg-amber-500/10 text-amber-400",
   };
   const familyColor = FAMILY_COLORS[history.bridgeFamily] ?? "bg-teal-500/10 text-teal-400";
+  const verifiedTokenPair =
+    history.tokenPairId &&
+    (statuses.some((status) => status.tokenPairId === history.tokenPairId) ||
+      (!historyLoading && !historyError && history.directions.some((dir) => dir.rows.length > 0)))
+      ? history.tokenPairId
+      : undefined;
+  let stateContent = (
+    <p className="text-muted-foreground text-sm">
+      Directional bridge state unavailable from the backend.
+    </p>
+  );
+  if (stateLoading) {
+    stateContent = <p role="status">Loading bridge state…</p>;
+  } else if (stateError) {
+    stateContent = <p role="alert">Could not load directional bridge state.</p>;
+  } else if (statuses.length > 0) {
+    stateContent = (
+      <div className="grid gap-4 xl:grid-cols-2">
+        {statuses.map((s) => (
+          <DirectionSyncCard key={s.id} status={s} indexerState={indexerState} />
+        ))}
+      </div>
+    );
+  }
+
+  let historyContent = (
+    <div className="space-y-10">
+      {history.directions.map((direction) => (
+        <BridgeHistorySection
+          key={`${direction.sourceChain}-${direction.destinationChain}`}
+          direction={direction}
+        />
+      ))}
+    </div>
+  );
+  if (historyLoading) historyContent = <p role="status">Loading operation history…</p>;
+  else if (historyError) historyContent = <p role="alert">Could not load operation history.</p>;
 
   return (
     <>
@@ -71,31 +122,33 @@ export function BridgeDetailView({ history, statuses, indexerState }: BridgeDeta
         </div>
 
         <p className="text-muted-foreground mt-1.5 font-mono text-sm">{context}</p>
-        {history.tokenPairId && (
-          <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
-            N3 / Neo X contracts · {history.tokenPairId.replace(":", " / ")}
-          </p>
-        )}
       </header>
 
-      {/* B. Sync summary cards for each direction */}
-      {statuses.length > 0 && (
-        <div className="mb-8 grid gap-4">
-          {statuses.map((s) => (
-            <DirectionSyncCard key={s.id} status={s} indexerState={indexerState} />
-          ))}
-        </div>
+      {history.bridgeFamily === "token" && (
+        <BridgeTokenPairIdentity tokenPairId={verifiedTokenPair} />
       )}
 
-      {/* C. History tables per direction */}
-      <div className="space-y-10">
-        {history.directions.map((direction) => (
-          <BridgeHistorySection
-            key={`${direction.sourceChain}-${direction.destinationChain}`}
-            direction={direction}
-          />
-        ))}
-      </div>
+      <section aria-labelledby="bridge-state-heading" className="mb-8 space-y-4">
+        <h2 id="bridge-state-heading" className="text-lg font-semibold">
+          Observed bridge state
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Bridge observations are event times. An older observation alone does not establish indexer
+          lag.
+        </p>
+        {stateContent}
+      </section>
+
+      <section aria-labelledby="bridge-configuration-heading" className="mb-8 space-y-2">
+        <h2 id="bridge-configuration-heading" className="text-lg font-semibold">
+          Configuration
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Contract configuration is unavailable from the backend API for this bridge.
+        </p>
+      </section>
+
+      {historyContent}
     </>
   );
 }
@@ -131,8 +184,8 @@ function DirectionSyncCard({
         </div>
 
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Compares on-chain bridge state between {srcLabel} (source) and {dstLabel} (destination).
-          Both the operation count and the state root must match for the bridge to be fully synced.
+          Compares backend observations on {srcLabel} (source) and {dstLabel} (destination). Nonces
+          and roots are reported for this selected direction.
         </p>
 
         {/* Comparison table */}
@@ -150,7 +203,7 @@ function DirectionSyncCard({
               <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.source.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">requested</div>
+              <div className="text-muted-foreground text-[11px]">source</div>
             </div>
             <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -166,7 +219,7 @@ function DirectionSyncCard({
               <div className="font-mono text-lg font-semibold tabular-nums">
                 {formatNonce(status.destination.nonce)}
               </div>
-              <div className="text-muted-foreground text-[11px]">relayed</div>
+              <div className="text-muted-foreground text-[11px]">destination</div>
             </div>
           </div>
 
@@ -177,6 +230,9 @@ function DirectionSyncCard({
               title={status.source.root}
             >
               {shortenHash(status.source.root, 8, 4)}
+              {status.source.root && (
+                <CopyButton text={status.source.root} label="Copy source state root" />
+              )}
             </div>
             <div className="flex w-36 flex-col items-center gap-1">
               <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -193,6 +249,9 @@ function DirectionSyncCard({
               title={status.destination.root}
             >
               {shortenHash(status.destination.root, 8, 4)}
+              {status.destination.root && (
+                <CopyButton text={status.destination.root} label="Copy destination state root" />
+              )}
             </div>
           </div>
         </div>
@@ -210,7 +269,7 @@ function DirectionSyncCard({
               <div title={side.updatedAt}>
                 Observed {side.updatedAt ? relativeTime(side.updatedAt) : "Unavailable"}
               </div>
-              {side.synthetic && <p>No destination execution required</p>}
+              {side.synthetic && <p>Synthetic destination observation</p>}
             </div>
           ))}
         </div>
