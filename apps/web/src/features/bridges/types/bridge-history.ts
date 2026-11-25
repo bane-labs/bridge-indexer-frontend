@@ -1,4 +1,4 @@
-import type { BackendBridgeOperation } from "./backend-api";
+import type { BackendBridgeOperation, BackendOperationStatus } from "./backend-api";
 import type { BridgeFamily, ChainId } from "./bridge";
 
 /** A single bridge operation row in the history view. */
@@ -9,34 +9,14 @@ export interface BridgeOperationHistoryRow {
   nonce: number;
   root?: string;
   sourceTxHash?: string;
-  /**
-   * Transaction where the relayer updated the root on the destination chain.
-   * Populated once the operation has been relayed.
-   */
+  /** Destination transaction reported by the backend, when available. */
   destinationTxHash?: string;
-  settledAt?: string;
-  /**
-   * Front-end operation status, mapped from the backend status:
-   * - "pending": operation is in transit, not yet visible on the destination.
-   * - "relayed": root has been posted to the destination; awaiting claim or
-   *   execution (was a backend `stuck` or in-relay `pending` operation).
-   * - "completed": fully settled — either directly distributed or after a
-   *   relay-then-claim flow.
-   */
-  status: "pending" | "relayed" | "completed";
-  /**
-   * Settlement disposition for operations in the relay-then-claim /
-   * relay-then-execute flow:
-   * - "waiting_to_be_claimed": relayed, user has not yet claimed (native/token).
-   * - "waiting_for_execution": relayed message not yet executed (message bridge).
-   * - undefined: directly completed with no separate settlement step.
-   */
-  settlementStatus?: "waiting_to_be_claimed" | "waiting_for_execution";
-  /**
-   * Claim transaction hash, present when an operation was relayed and then
-   * explicitly claimed by the user. Rendered as a link in the Settlement column.
-   */
+  /** Uninterpreted legacy backend operation status. */
+  status: BackendOperationStatus;
+  /** Claim transaction hash, if separately reported by the backend. */
   claimTxHash?: string;
+  /** Legacy completion timestamp; not necessarily destination settlement. */
+  completionTimestamp?: string;
   /** Transfer amount (string for big number safety). */
   amount?: string;
   /** Sender address on source chain. */

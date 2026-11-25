@@ -230,7 +230,7 @@ test("merged history retains pagination", async () => {
   expect(within(table).getAllByRole("row")).toHaveLength(2);
 });
 
-test("merged history retains main's completed claim presentation", async () => {
+test("a reported stuck operation retains its claim link without asserting settlement", async () => {
   server.use(
     rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
     rest.get("*/operations", (_req, res, ctx) =>
@@ -239,7 +239,7 @@ test("merged history retains main's completed claim presentation", async () => {
   );
   renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
   const table = await screen.findByRole("table");
-  expect(within(table).getByText("Completed")).toBeInTheDocument();
+  expect(within(table).getByText("Stuck (reported)")).toBeInTheDocument();
   const claim = within(table).getByRole("link", { name: /Transaction 0x11111111/ });
   expect(claim.getAttribute("href")).toContain(claimedDetailOperation.claim_tx_hash);
 });

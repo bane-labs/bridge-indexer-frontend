@@ -21,44 +21,31 @@ interface BridgeHistoryTableProps {
 }
 
 const STATUS_CONFIG: Record<
-  string,
+  BridgeOperationHistoryRow["status"],
   { label: string; variant: "success" | "destructive" | "warning" | "secondary" | "info" }
 > = {
-  completed: { label: "Completed", variant: "success" },
-  relayed: { label: "Relayed", variant: "secondary" },
-  pending: { label: "In Progress", variant: "info" },
+  completed: { label: "Completed (reported)", variant: "secondary" },
+  stuck: { label: "Stuck (reported)", variant: "warning" },
+  pending: { label: "Pending (reported)", variant: "info" },
 };
 
-const SETTLEMENT_LABEL: Record<string, string> = {
-  waiting_to_be_claimed: "Waiting to be claimed",
-  waiting_for_execution: "Waiting for execution",
-};
-
-function SettlementCell({
+function ClaimCell({
   claimTxHash,
-  settlementStatus,
   destinationChain,
 }: {
   claimTxHash?: string;
-  settlementStatus?: string;
   destinationChain: ChainId;
 }) {
   if (claimTxHash) {
     return <TxLinkCell txHash={claimTxHash} chainId={destinationChain} />;
   }
-  if (settlementStatus) {
-    return (
-      <span className="text-muted-foreground text-sm">
-        {SETTLEMENT_LABEL[settlementStatus] ?? settlementStatus}
-      </span>
-    );
-  }
-  return <span className="text-muted-foreground text-sm">—</span>;
+  return <span className="text-muted-foreground text-sm">Unavailable</span>;
 }
 
 /**
  * History table for a single bridge direction.
- * Columns: Nonce, Status, Amount, Root, Source Tx, Dest Tx, Settled.
+ * The legacy status and completion time are displayed as reported, without
+ * interpreting relay, settlement, distribution, or execution.
  */
 export function BridgeHistoryTable({
   rows,
@@ -79,21 +66,18 @@ export function BridgeHistoryTable({
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
               <TableHead className="w-20">Nonce</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Settlement</TableHead>
+              <TableHead>Backend Status</TableHead>
+              <TableHead>Claim Tx</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Root</TableHead>
               <TableHead>Source Tx</TableHead>
               <TableHead>Dest Tx</TableHead>
-              <TableHead className="text-right">Settled</TableHead>
+              <TableHead className="text-right">Completion (legacy)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((row) => {
-              const statusConfig = STATUS_CONFIG[row.status] ?? {
-                label: row.status,
-                variant: "secondary" as const,
-              };
+              const statusConfig = STATUS_CONFIG[row.status];
 
               return (
                 <TableRow
@@ -125,11 +109,7 @@ export function BridgeHistoryTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <SettlementCell
-                      claimTxHash={row.claimTxHash}
-                      settlementStatus={row.settlementStatus}
-                      destinationChain={destinationChain}
-                    />
+                    <ClaimCell claimTxHash={row.claimTxHash} destinationChain={destinationChain} />
                   </TableCell>
                   <TableCell className="font-mono text-sm tabular-nums">
                     {row.amount ?? "—"}
@@ -144,16 +124,16 @@ export function BridgeHistoryTable({
                     <TxLinkCell txHash={row.destinationTxHash} chainId={destinationChain} />
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    {row.settledAt ? (
+                    {row.completionTimestamp ? (
                       <time
-                        dateTime={row.settledAt}
-                        title={formatSettledTooltip(row.settledAt)}
+                        dateTime={row.completionTimestamp}
+                        title={formatSettledTooltip(row.completionTimestamp)}
                         className="text-sm"
                       >
-                        {formatSettledTime(row.settledAt)}
+                        {formatSettledTime(row.completionTimestamp)}
                       </time>
                     ) : (
-                      <span className="text-muted-foreground text-sm italic">Pending</span>
+                      <span className="text-muted-foreground text-sm italic">Unavailable</span>
                     )}
                   </TableCell>
                 </TableRow>

@@ -21,44 +21,11 @@ export function buildRows(
         amount: op.amount,
         fromAddress: op.from_address,
         toAddress: op.to_address,
+        // Preserve the backend's legacy status without deriving relay or execution.
+        status: op.status,
+        claimTxHash: op.claim_tx_hash,
+        completionTimestamp: op.completion_timestamp,
       };
-
-      if (op.status === "stuck") {
-        if (op.claim_tx_hash) {
-          // Relayed and subsequently claimed — show as completed with claim
-          // tx link in the Settlement column.
-          return {
-            ...base,
-            status: "completed" as const,
-            claimTxHash: op.claim_tx_hash,
-            settledAt: op.completion_timestamp,
-          };
-        }
-        // Relayed, waiting for the user to claim (native/token) or the
-        // message to be executed (message bridge).
-        return {
-          ...base,
-          status: "relayed" as const,
-          settlementStatus:
-            op.bridge_type === "message"
-              ? ("waiting_for_execution" as const)
-              : ("waiting_to_be_claimed" as const),
-        };
-      }
-
-      if (op.status === "pending") {
-        // Not yet indexed on the destination chain — no settlement action yet.
-        return {
-          ...base,
-          status: "pending" as const,
-        };
-      }
-
-      // completed — directly distributed, no separate claim step.
-      return {
-        ...base,
-        status: "completed" as const,
-        settledAt: op.completion_timestamp,
-      };
+      return base;
     });
 }

@@ -1,10 +1,15 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@atlas/ui";
 
-import { getExplorerAddressUrl, getExplorerTxUrl } from "../lib/bridge-explorer-links";
+import {
+  getExplorerAddressUrl,
+  getExplorerContractUrl,
+  getExplorerTxUrl,
+} from "../lib/bridge-explorer-links";
 import { formatNonce, formatTimestamp, getChainLabel, getDirectionLabel } from "../lib/formatters";
 
 import { CopyButton } from "./copy-button";
@@ -41,6 +46,17 @@ function Copyable({ value, label }: { value?: string; label: string }) {
   );
 }
 
+function explorerUrl(
+  chain: ChainId,
+  value: string | undefined,
+  kind: "transaction" | "address" | "contract"
+): string | Promise<string | undefined> | undefined {
+  if (!value) return undefined;
+  if (kind === "transaction") return getExplorerTxUrl(chain, value);
+  if (kind === "contract") return getExplorerContractUrl(chain, value);
+  return getExplorerAddressUrl(chain, value);
+}
+
 function ExplorerValue({
   value,
   label,
@@ -50,23 +66,40 @@ function ExplorerValue({
   value?: string;
   label: string;
   chain: ChainId;
-  kind: "transaction" | "address";
+  kind: "transaction" | "address" | "contract";
 }) {
+  const [url, setUrl] = useState<string | undefined>();
+  useEffect(() => {
+    let active = true;
+    Promise.resolve(explorerUrl(chain, value, kind))
+      .then((resolved) => {
+        if (active) setUrl(resolved);
+      })
+      .catch(() => {
+        if (active) setUrl(undefined);
+      });
+    return () => {
+      active = false;
+    };
+  }, [chain, kind, value]);
+
   if (!value) return <span className="text-muted-foreground">Unavailable</span>;
-  const url =
-    kind === "transaction" ? getExplorerTxUrl(chain, value) : getExplorerAddressUrl(chain, value);
   return (
     <span className="flex flex-wrap items-start gap-x-2 gap-y-1">
       <Copyable value={value} label={label} />
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`View ${label} on ${getChainLabel(chain)} explorer`}
-        className="text-primary inline-flex shrink-0 items-center gap-1 text-xs underline-offset-4 hover:underline"
-      >
-        Explorer <ExternalLink aria-hidden="true" className="size-3" />
-      </a>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`View ${label} on ${getChainLabel(chain)} explorer`}
+          className="text-primary inline-flex shrink-0 items-center gap-1 text-xs underline-offset-4 hover:underline"
+        >
+          Explorer <ExternalLink aria-hidden="true" className="size-3" />
+        </a>
+      ) : (
+        <span className="text-muted-foreground text-xs">Explorer link unavailable</span>
+      )}
     </span>
   );
 }
@@ -169,7 +202,7 @@ export function BridgeOperationDetail({
                       value={op.token_contract}
                       label="source token contract"
                       chain={sourceChain}
-                      kind="address"
+                      kind="contract"
                     />
                   </Field>
                 )}
@@ -225,7 +258,7 @@ export function BridgeOperationDetail({
                       value={op.dest_token_contract}
                       label="destination token contract"
                       chain={destinationChain}
-                      kind="address"
+                      kind="contract"
                     />
                   </Field>
                 )}
