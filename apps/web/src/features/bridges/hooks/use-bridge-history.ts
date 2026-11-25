@@ -22,6 +22,10 @@ interface BridgeHistoryQueryData {
   history: BridgeHistoryPageData;
   statuses: ReturnType<typeof mapSyncInstancesToStatuses>;
   indexerState?: BackendIndexerStateResponse;
+  historyLoading: boolean;
+  historyError: boolean;
+  stateLoading: boolean;
+  stateError: boolean;
 }
 
 function mapOperationsToHistory(
@@ -64,42 +68,54 @@ export function useBridgeHistory(slug: string, directionSlug: BridgeDirectionSlu
     refetchInterval: 60000,
   });
 
-  const result = useQuery<BridgeHistoryQueryData | null>({
-    queryKey: ["bridge-history", slug, directionSlug],
-    queryFn: async () => {
-      const parsed = parseBridgeSlug(slug);
-      const direction = parseDirectionSlug(directionSlug);
-      if (!parsed || !direction) {
-        return null;
-      }
-
-      const [operations, syncInstances] = await Promise.all([
-        fetchAllBridgeOperationsViaClient(api, parsed.bridgeFamily),
-        fetchSyncInstancesViaClient(api),
-      ]);
-
-      const selection = selectBridgeData(parsed, operations, syncInstances);
-      const statuses = mapSyncInstancesToStatuses(selection.instances).filter(
-        (status) => status.sourceChain === direction.sourceChain
-      );
-      const history = mapOperationsToHistory(
-        slug,
-        directionSlug,
-        selection.operations,
-        selection.tokenSymbol,
-        parsed.tokenPairId,
-        selection.combined
-      );
-      if (!history) return null;
-
-      return { history, statuses };
-    },
+  const parsed = parseBridgeSlug(slug);
+  const direction = parseDirectionSlug(directionSlug);
+  const operations = useQuery({
+    queryKey: ["bridge-operations", slug],
+    queryFn: () => fetchAllBridgeOperationsViaClient(api, parsed?.bridgeFamily),
+    enabled: Boolean(parsed && direction),
+    retry: false,
     staleTime: 30000,
     refetchInterval: 60000,
   });
-
+  const sync = useQuery({
+    queryKey: ["bridge-sync-instances"],
+    queryFn: () => fetchSyncInstancesViaClient(api),
+    enabled: Boolean(parsed && direction),
+    retry: false,
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+  let data: BridgeHistoryQueryData | null | undefined;
+  if (!parsed || !direction) {
+    data = null;
+  } else if (!operations.isPending || !sync.isPending) {
+    const selection = selectBridgeData(parsed, operations.data ?? [], sync.data ?? []);
+    const history = mapOperationsToHistory(
+      slug,
+      directionSlug,
+      selection.operations,
+      selection.tokenSymbol,
+      parsed.tokenPairId,
+      selection.combined
+    );
+    data = history
+      ? {
+          history,
+          // Show both directions of the selected bridge; operation history stays
+          // scoped to the requested direction.
+          statuses: mapSyncInstancesToStatuses(selection.instances),
+          indexerState,
+          historyLoading: operations.isPending,
+          historyError: operations.isError,
+          stateLoading: sync.isPending,
+          stateError: sync.isError,
+        }
+      : null;
+  }
   return {
-    ...result,
-    data: result.data ? { ...result.data, indexerState } : result.data,
+    data,
+    isLoading: operations.isPending && sync.isPending,
+    isError: operations.isError && sync.isError,
   };
 }

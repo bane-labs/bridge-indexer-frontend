@@ -97,12 +97,113 @@ test("detail cards render backend state when history is empty and indexer state 
   expect(screen.getByLabelText("Indexer: Unknown")).toBeInTheDocument();
   expect(screen.getByText("Block Unavailable")).toBeInTheDocument();
   expect(screen.getByText("Observed Unavailable")).toBeInTheDocument();
-  expect(screen.getByText("requested")).toBeInTheDocument();
-  expect(screen.getByText("relayed")).toBeInTheDocument();
+  expect(screen.getByText("source")).toBeInTheDocument();
+  expect(screen.getByText("destination")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Observed bridge state" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Configuration" })).toBeInTheDocument();
+  expect(screen.getByText(/contract configuration is unavailable/i)).toBeInTheDocument();
   expect(screen.getByLabelText("Operation: Pending")).toBeInTheDocument();
   expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+  expect(screen.getByRole("button", { name: "Copy source state root" })).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Copy destination state root" })
+  ).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Operation: Delayed")).not.toBeInTheDocument();
 });
+
+test("legacy token URLs display a unique backend token pair", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync, reverseDetailSync])))
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  const pair = await screen.findByRole("region", { name: "Token pair identity" });
+  expect(within(pair).getByText("aaa")).toBeInTheDocument();
+  expect(within(pair).getByText("bbb")).toBeInTheDocument();
+  expect(within(pair).queryByText(/identity unavailable/i)).not.toBeInTheDocument();
+});
+
+test("legacy token URLs do not choose between multiple or incomplete backend pairs", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync, otherPairSync])))
+  );
+  const { unmount } = renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+  unmount();
+
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) =>
+      res(ctx.json([{ ...detailSync, dst_token: undefined }]))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+});
+
+test("legacy token URLs reject an observed history pair conflicting with sync state", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [otherPairOperation], total: 1 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-ndmeme" />);
+  expect(await screen.findByText(/exact token-pair identity unavailable/i)).toBeInTheDocument();
+});
+
+test("sync request failure does not hide operation history or token pair identity", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.status(503))),
+    rest.get("*/operations", (_req, res, ctx) =>
+      res(ctx.json({ operations: [detailOperation], total: 1 }))
+    )
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(
+    await screen.findByText("Could not load directional bridge state.", {}, { timeout: 10000 })
+  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Token pair identity" })).toBeInTheDocument();
+  expect(screen.getByRole("table")).toBeInTheDocument();
+});
+
+test("operation history request failure leaves observed state visible", async () => {
+  server.use(
+    rest.get("*/sync/instances", (_req, res, ctx) => res(ctx.json([detailSync]))),
+    rest.get("*/operations", (_req, res, ctx) => res(ctx.status(503)))
+  );
+  renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" />);
+  expect(
+    await screen.findByText("Could not load operation history.", {}, { timeout: 10000 })
+  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Observed bridge state" })).toBeInTheDocument();
+  expect(screen.getByText("42")).toBeInTheDocument();
+});
+
+test.each(["native", "message"] as const)(
+  "%s bridge shows its own directional observations without token contracts",
+  async (bridgeFamily) => {
+    server.use(
+      rest.get("*/sync/instances", (_req, res, ctx) =>
+        res(
+          ctx.json([
+            {
+              ...detailSync,
+              bridge_type: bridgeFamily,
+              src_token: undefined,
+              dst_token: undefined,
+            },
+          ])
+        )
+      )
+    );
+    renderWithProviders(<DetailRequest slug={bridgeFamily} />);
+    expect(
+      await screen.findByRole("heading", { name: "Observed bridge state" })
+    ).toBeInTheDocument();
+    expect(await screen.findByText("42")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Token pair identity" })).not.toBeInTheDocument();
+    expect(screen.getByText(/contract configuration is unavailable/i)).toBeInTheDocument();
+  }
+);
 
 test("the delayed filter includes the root mismatch counted in the summary", async () => {
   server.use(
@@ -211,9 +312,13 @@ test("directional details keep the requested direction and optional liveness", a
   );
   renderWithProviders(<DetailRequest slug="token-pair-aaa-bbb" direction="x-to-n3" />);
   expect((await screen.findAllByText("77")).length).toBeGreaterThan(0);
-  expect(screen.queryByText("42")).not.toBeInTheDocument();
-  expect(await screen.findByText("Indexer liveness")).toBeInTheDocument();
-  expect(screen.getAllByText("Indexed block:").length).toBe(2);
+  expect(screen.getByText("42")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "View operation 77 details" })).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "View operation 42 details" })
+  ).not.toBeInTheDocument();
+  expect(await screen.findAllByText("Indexer liveness")).toHaveLength(2);
+  expect(screen.getAllByText("Indexed block:").length).toBe(4);
 });
 
 test("merged history retains pagination", async () => {
